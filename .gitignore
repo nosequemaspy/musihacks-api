@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Environment variables
+.env
+.env.*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+server.log
+
+# Large PDFs (exceed GitHub limits)
+*.pdf
+
+# Screenshots
+Captura*.png
+Screenshot*.jpg
+
+# Temporary audio files
+/tmp/musihacks_*
+
+# Claude Code config
+.claude/

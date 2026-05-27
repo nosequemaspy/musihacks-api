@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: musihacks-api
+    runtime: docker
+    plan: free
+    envVars:
+      - key: PORT
+        value: "8000"
+      - key: DATABASE_URL
+        sync: false  # Set manually from Neon dashboard
