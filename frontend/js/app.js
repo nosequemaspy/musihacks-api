@@ -448,18 +448,6 @@
         });
     }
 
-    // --- Harmony TOC smooth scroll ---
-    document.querySelectorAll('.toc-link').forEach(link => {
-        link.addEventListener('click', (e) => {
-            e.preventDefault();
-            const targetId = link.getAttribute('href').slice(1);
-            const target = document.getElementById(targetId);
-            if (target) {
-                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-        });
-    });
-
     // --- Recording Controls ---
     btnRecord.addEventListener('click', async () => {
         if (Tone.context.state !== 'running') await Tone.start();
@@ -2664,6 +2652,9 @@
         }
     }
 
+    // Expose loadScaleBrowser globally for Theory module to call on-demand
+    window.loadScaleBrowser = loadScaleBrowser;
+
     // ============================================================
     // === MIDI RECORDINGS ========================================
     // ============================================================
@@ -2911,6 +2902,5 @@
     setupChordExplorer();
     updateHomeStats();
     renderMidiRecordings();
-    loadScaleBrowser('major');
 
 })();

@@ -13,17 +13,8 @@ const HarmonyTools = (() => {
     };
 
     function init() {
-        setupCadences();
-        setupTritone();
-        setupModalInterchange();
-        setupNegativeHarmony();
-        setupChopinBass();
-        setupMelodySuggestions();
-        setupSus4Table();
-        setupCinematic();
-        setupImprovisation();
-        setupMediants();
-        setupComposition();
+        // Setup functions are now called on-demand by Theory module
+        // when tool lessons are rendered
     }
 
     // ─── SUS4 Dominants Table ──────────────────────
@@ -1013,8 +1004,6 @@ const HarmonyTools = (() => {
                 const style = document.getElementById('composeStyleSelect').value;
                 loadComposition(style);
             });
-            // Auto-load ghibli on init
-            loadComposition('ghibli');
         }
     }
 
@@ -1158,6 +1147,19 @@ const HarmonyTools = (() => {
         return { root, type: typeMap[rest] || 'major' };
     }
 
+    // ─── On-demand initializers for tool lessons ──────
+    function initSus4() { setupSus4Table(); }
+    function initCadences() { setupCadences(); }
+    function initTritone() { setupTritone(); }
+    function initModalInterchange() { setupModalInterchange(); }
+    function initNegativeHarmony() { setupNegativeHarmony(); }
+    function initChopinBass() { setupChopinBass(); }
+    function initMelodySuggestions() { setupMelodySuggestions(); }
+    function initCinematic() { setupCinematic(); }
+    function initImprovisation() { setupImprovisation(); }
+    function initMediants() { setupMediants(); }
+    function initComposition() { setupComposition(); }
+
     return {
         init,
         playChordFromNotes,
@@ -1169,5 +1171,17 @@ const HarmonyTools = (() => {
         loadImprovisation,
         loadMediants,
         loadComposition,
+        // On-demand initializers for tool lessons
+        initSus4,
+        initCadences,
+        initTritone,
+        initModalInterchange,
+        initNegativeHarmony,
+        initChopinBass,
+        initMelodySuggestions,
+        initCinematic,
+        initImprovisation,
+        initMediants,
+        initComposition,
     };
 })();

@@ -3004,18 +3004,618 @@ const Theory = (() => {
                 }
             ]
         },
+        // ============ TOOL LESSONS (from Harmony tab) ============
+        {
+            id: 'tool-sus4',
+            title: '1. Dominantes SUS4',
+            type: 'tool',
+            toolInit: 'initSus4',
+            content: `
+                <div class="lesson-section">
+                    <h3>Dominantes SUS4</h3>
+                    <p>Resolución clásica: V7sus4 → V7 → I para las 12 tonalidades. Click en una fila para escuchar la secuencia.</p>
+                    <div id="sus4-table-container"></div>
+                </div>
+                <div class="lesson-section">
+                    <div class="edu-img" onclick="openImageModal('/reference/dominantes-sus4.png')">
+                        <img src="/reference/dominantes-sus4.png" alt="Dominantes SUS4" loading="lazy">
+                        <div class="edu-img-caption">Diagrama de dominantes SUS4: V7sus4 → V7 → I</div>
+                    </div>
+                    <h4>Qué son los dominantes sus4</h4>
+                    <p>El <strong>V7sus4</strong> reemplaza la 3era del acorde dominante por la 4ta, creando una <strong>tensión extra</strong> que luego se resuelve al V7 y finalmente al I.</p>
+                    <div class="edu-concept">
+                        <h5>Voice leading</h5>
+                        <p>G7sus4 → G7 → C: la nota Do (4ta) baja a Si (3era), y luego Si resuelve a Do de la tónica.</p>
+                    </div>
+                </div>
+            `,
+            quizzes: [{ question: '¿Qué nota reemplaza la 3era en un acorde sus4?', options: ['La 2da', 'La 4ta', 'La 5ta', 'La 7ma'], correct: 1 }]
+        },
+        {
+            id: 'tool-cadences',
+            title: '2. Cadencias interactivas',
+            type: 'tool',
+            toolInit: 'initCadences',
+            content: `
+                <div class="lesson-section">
+                    <h3>Cadencias</h3>
+                    <p>Escucha y aprende las cadencias más importantes de la música.</p>
+                    <div class="harmony-key-select">
+                        <label>Tonalidad: <select id="cadenceKeySelect" class="harmony-key-input">
+                            <option value="C">C Mayor</option><option value="G">G Mayor</option>
+                            <option value="D">D Mayor</option><option value="A">A Mayor</option>
+                            <option value="E">E Mayor</option><option value="Bb">Bb Mayor</option>
+                            <option value="F">F Mayor</option><option value="Eb">Eb Mayor</option>
+                            <option value="Ab">Ab Mayor</option>
+                        </select></label>
+                        <button id="btnLoadCadences" class="btn btn-accent">Cargar</button>
+                    </div>
+                    <div id="cadences-container" class="cadences-grid"></div>
+                </div>
+                <div class="lesson-section">
+                    <h4>Guía de cadencias</h4>
+                    <p>Las cadencias son la <strong>puntuación</strong> de la música.</p>
+                    <div class="edu-concept"><h5>Auténtica perfecta (V→I)</h5><p>La resolución más fuerte y conclusiva.</p></div>
+                    <div class="edu-concept"><h5>Plagal (IV→I)</h5><p>Resolución suave. Cadencia "Amén".</p></div>
+                    <div class="edu-concept"><h5>Rota (V→vi)</h5><p>Engaño armónico: el V no va al I esperado.</p></div>
+                    <div class="edu-concept"><h5>ii-V-I</h5><p>La cadencia reina del jazz.</p></div>
+                    <div class="edu-concept"><h5>Royal Road (IV→V→iii→vi)</h5><p>Progresión característica del J-pop y anime.</p></div>
+                    <div class="edu-concept"><h5>Andaluza (iv→III→II→I)</h5><p>Cadencia descendente del flamenco.</p></div>
+                    <div class="edu-concept"><h5>Backdoor (bVII7→I)</h5><p>Resolución "por la puerta trasera". Sonido cálido y jazzy.</p></div>
+                </div>
+            `,
+            quizzes: [{ question: '¿Qué cadencia es conocida como la cadencia "Amén"?', options: ['Auténtica', 'Plagal', 'Rota', 'Andaluza'], correct: 1 }]
+        },
+        {
+            id: 'tool-tritone',
+            title: '3. Sustitución tritonal',
+            type: 'tool',
+            toolInit: 'initTritone',
+            content: `
+                <div class="lesson-section">
+                    <h3>Sustitución tritonal</h3>
+                    <p>Dado un acorde dominante, encuentra su sustitución tritonal.</p>
+                    <div class="harmony-input-row">
+                        <label>Acorde: <input type="text" id="tritoneInput" placeholder="Ej: G7, Db7, A7" class="harmony-text-input"></label>
+                        <button id="btnTritone" class="btn btn-accent">Calcular</button>
+                        <button id="btnTritoneAll" class="btn btn-clear">Ver todas las tonalidades</button>
+                    </div>
+                    <div id="tritone-result" class="harmony-result"></div>
+                    <div id="tritone-all-keys" class="harmony-result hidden"></div>
+                </div>
+                <div class="lesson-section">
+                    <h4>Por qué funciona la sustitución tritonal</h4>
+                    <p>El <strong>tritono</strong> (6 semitonos) es la tensión clave del acorde dominante. La 3era y la 7ma del V7 forman un tritono. El bII7 comparte exactamente esas mismas notas, por eso funciona como sustituto.</p>
+                    <div class="edu-concept">
+                        <h5>Ejemplo en C mayor</h5>
+                        <p><strong>G7</strong> tiene B y F (tritono). <strong>Db7</strong> también tiene F y B (=Cb). ¡Mismo tritono, distinta raíz!</p>
+                    </div>
+                </div>
+            `,
+            quizzes: [{ question: '¿Cuántos semitonos tiene el intervalo de tritono?', options: ['4', '5', '6', '7'], correct: 2 }]
+        },
+        {
+            id: 'tool-modal',
+            title: '4. Intercambio modal',
+            type: 'tool',
+            toolInit: 'initModalInterchange',
+            content: `
+                <div class="lesson-section">
+                    <h3>Intercambio modal</h3>
+                    <p>Acordes prestados del modo paralelo.</p>
+                    <div class="harmony-input-row">
+                        <label>Tonalidad: <select id="modalInterchangeKey" class="harmony-key-input">
+                            <option value="C">C Mayor</option><option value="G">G Mayor</option>
+                            <option value="D">D Mayor</option><option value="A">A Mayor</option>
+                            <option value="F">F Mayor</option><option value="Bb">Bb Mayor</option>
+                            <option value="Eb">Eb Mayor</option>
+                        </select></label>
+                        <label>Modo: <select id="modalInterchangeMode" class="harmony-key-input">
+                            <option value="major">Mayor (presta de menor)</option>
+                            <option value="minor">Menor (presta de mayor)</option>
+                        </select></label>
+                        <button id="btnModalInterchange" class="btn btn-accent">Mostrar</button>
+                    </div>
+                    <div id="modal-interchange-result" class="harmony-result"></div>
+                </div>
+                <div class="lesson-section">
+                    <h4>Acordes prestados más comunes</h4>
+                    <ul>
+                        <li><strong>bVI</strong> — El más popular. Pasa de mayor a menor.</li>
+                        <li><strong>iv</strong> — Giro melancólico inesperado.</li>
+                        <li><strong>bVII</strong> — Sonido de rock por excelencia.</li>
+                        <li><strong>bIII</strong> — Desvío tonal dramático.</li>
+                    </ul>
+                </div>
+            `,
+            quizzes: [{ question: '¿Qué acorde prestado es el más popular en música pop?', options: ['bIII', 'iv', 'bVI', 'bVII'], correct: 2 }]
+        },
+        {
+            id: 'tool-negative',
+            title: '5. Armonía negativa',
+            type: 'tool',
+            toolInit: 'initNegativeHarmony',
+            content: `
+                <div class="lesson-section">
+                    <h3>Armonía negativa</h3>
+                    <p>Reflejo armónico de acordes sobre el eje de simetría (concepto de Ernst Levy / Jacob Collier).</p>
+                    <div class="harmony-input-row">
+                        <label>Tonalidad: <select id="negativeHarmonyKey" class="harmony-key-input">
+                            <option value="C">C Mayor</option><option value="G">G Mayor</option>
+                            <option value="D">D Mayor</option><option value="A">A Mayor</option>
+                            <option value="F">F Mayor</option><option value="Bb">Bb Mayor</option>
+                            <option value="Eb">Eb Mayor</option>
+                        </select></label>
+                        <button id="btnNegativeHarmony" class="btn btn-accent">Calcular</button>
+                    </div>
+                    <div id="negative-harmony-result" class="harmony-result"></div>
+                </div>
+                <div class="lesson-section">
+                    <h4>El eje de simetría</h4>
+                    <p>En C mayor, el eje está entre <strong>E y Eb</strong>. Cada nota se "refleja" al otro lado. Resultado: un acorde mayor se convierte en menor y viceversa.</p>
+                    <div class="edu-concept">
+                        <h5>Ejemplo clásico</h5>
+                        <p>En C mayor: <strong>G7 → Fm6</strong> (o Dm7b5). El dominante se transforma en subdominante menor.</p>
+                    </div>
+                </div>
+            `,
+            quizzes: [{ question: '¿Quién popularizó la armonía negativa en la música moderna?', options: ['Bach', 'Chopin', 'Jacob Collier', 'Debussy'], correct: 2 }]
+        },
+        {
+            id: 'tool-chopin-bass',
+            title: '6. Bajo de Chopin',
+            type: 'tool',
+            toolInit: 'initChopinBass',
+            content: `
+                <div class="lesson-section">
+                    <h3>Bajo de Chopin (3era menor)</h3>
+                    <p>Voicing con bajo a la 3era menor inferior. Sonido romántico y profundo.</p>
+                    <div class="chopin-explanation">
+                        <div class="chopin-diagram">
+                            <div class="chopin-step"><span class="chopin-label">Raíz</span><span class="chopin-note" id="chopinDiagramRoot">C</span></div>
+                            <div class="chopin-arrow">↓ 3 semitonos</div>
+                            <div class="chopin-step"><span class="chopin-label">Bajo</span><span class="chopin-note chopin-bass-note" id="chopinDiagramBass">A</span></div>
+                        </div>
+                    </div>
+                    <div class="harmony-input-row">
+                        <label>Acorde: <input type="text" id="chopinInput" placeholder="Ej: C" class="harmony-text-input"></label>
+                        <button id="btnChopin" class="btn btn-accent">Calcular</button>
+                        <button id="btnChopinAll" class="btn btn-clear">Ver todas las tonalidades</button>
+                    </div>
+                    <div id="chopin-result" class="harmony-result"></div>
+                    <div id="chopin-all-keys" class="harmony-result hidden"></div>
+                </div>
+                <div class="lesson-section">
+                    <h4>Por qué suena tan bien</h4>
+                    <p>La nota del bajo a la 3era menor inferior crea un acorde de séptima implícito. C con bajo en A suena como Am7, dando un color más complejo.</p>
+                </div>
+            `,
+            quizzes: [{ question: '¿A qué intervalo se coloca el bajo en la técnica de Chopin?', options: ['3era mayor inferior', '3era menor inferior', '5ta justa inferior', '2da mayor inferior'], correct: 1 }]
+        },
+        {
+            id: 'tool-melody-suggest',
+            title: '7. Sugerencias desde melodía',
+            type: 'tool',
+            toolInit: 'initMelodySuggestions',
+            content: `
+                <div class="lesson-section">
+                    <h3>Sugerencias desde melodía</h3>
+                    <p>Graba una melodía en el piano y obtén sugerencias de acordes compatibles.</p>
+                    <div class="harmony-input-row">
+                        <button id="btnSuggestFromMelody" class="btn btn-accent">Analizar melodía grabada</button>
+                    </div>
+                    <div id="melody-suggest-result" class="harmony-result"></div>
+                </div>
+                <div class="lesson-section">
+                    <h4>Cómo funciona</h4>
+                    <p>El analizador detecta la tonalidad probable de tu melodía y sugiere acordes diatónicos y dominantes secundarios compatibles con las notas que tocaste.</p>
+                </div>
+            `,
+            quizzes: [{ question: '¿Qué necesitas hacer antes de analizar una melodía?', options: ['Seleccionar tonalidad', 'Grabar notas en el piano', 'Elegir escala', 'Ajustar BPM'], correct: 1 }]
+        },
+        {
+            id: 'tool-cinematic',
+            title: '8. Progresiones cinematográficas',
+            type: 'tool',
+            toolInit: 'initCinematic',
+            content: `
+                <div class="lesson-section">
+                    <h3>Progresiones Cinematográficas</h3>
+                    <p>Progresiones inspiradas en Studio Ghibli, Final Fantasy y bandas sonoras. Click para escuchar.</p>
+                    <div class="harmony-input-row">
+                        <label>Tonalidad: <select id="cinematicKeySelect" class="harmony-key-input">
+                            <option value="C">C Mayor</option><option value="G">G Mayor</option>
+                            <option value="D">D Mayor</option><option value="A">A Mayor</option>
+                            <option value="E">E Mayor</option><option value="Bb">Bb Mayor</option>
+                            <option value="F">F Mayor</option><option value="Eb">Eb Mayor</option>
+                            <option value="Ab">Ab Mayor</option>
+                        </select></label>
+                        <label>Estilo: <select id="cinematicStyleSelect" class="harmony-key-input">
+                            <option value="">Todos</option>
+                            <option value="ghibli">Studio Ghibli / Hisaishi</option>
+                            <option value="final_fantasy">Final Fantasy / Uematsu</option>
+                            <option value="cinematic">Cinematográfico General</option>
+                        </select></label>
+                        <button id="btnLoadCinematic" class="btn btn-accent">Cargar</button>
+                    </div>
+                    <div id="cinematic-container" class="harmony-result"></div>
+                </div>
+            `,
+            quizzes: [{ question: '¿Qué compositor es conocido por las bandas sonoras de Studio Ghibli?', options: ['Uematsu', 'Williams', 'Hisaishi', 'Zimmer'], correct: 2 }]
+        },
+        {
+            id: 'tool-improv',
+            title: '9. Guía de improvisación',
+            type: 'tool',
+            toolInit: 'initImprovisation',
+            content: `
+                <div class="lesson-section">
+                    <h3>Guía de Improvisación</h3>
+                    <p>Para cada acorde diatónico: escalas, notas guía, tensiones y notas a evitar.</p>
+                    <div class="harmony-input-row">
+                        <label>Tonalidad: <select id="improvKeySelect" class="harmony-key-input">
+                            <option value="C">C Mayor</option><option value="G">G Mayor</option>
+                            <option value="D">D Mayor</option><option value="A">A Mayor</option>
+                            <option value="E">E Mayor</option><option value="Bb">Bb Mayor</option>
+                            <option value="F">F Mayor</option><option value="Eb">Eb Mayor</option>
+                            <option value="Ab">Ab Mayor</option>
+                        </select></label>
+                        <button id="btnLoadImprov" class="btn btn-accent">Cargar</button>
+                    </div>
+                    <div id="improv-container" class="harmony-result"></div>
+                </div>
+            `,
+            quizzes: [{ question: '¿Qué son las "notas guía" (guide tones) de un acorde?', options: ['La fundamental y la quinta', 'La tercera y la séptima', 'La novena y la oncena', 'Todas las notas del acorde'], correct: 1 }]
+        },
+        {
+            id: 'tool-mediants',
+            title: '10. Mediantes cromáticas',
+            type: 'tool',
+            toolInit: 'initMediants',
+            content: `
+                <div class="lesson-section">
+                    <h3>Mediantes Cromáticas</h3>
+                    <p>Acordes cuya raíz está a distancia de 3ra de la tónica. Cambios dramáticos de color, fundamentales en música de cine.</p>
+                    <div class="harmony-input-row">
+                        <label>Tonalidad: <select id="mediantsKeySelect" class="harmony-key-input">
+                            <option value="C">C Mayor</option><option value="G">G Mayor</option>
+                            <option value="D">D Mayor</option><option value="A">A Mayor</option>
+                            <option value="E">E Mayor</option><option value="Bb">Bb Mayor</option>
+                            <option value="F">F Mayor</option><option value="Eb">Eb Mayor</option>
+                            <option value="Ab">Ab Mayor</option>
+                        </select></label>
+                        <button id="btnLoadMediants" class="btn btn-accent">Cargar</button>
+                    </div>
+                    <div id="mediants-container" class="harmony-result"></div>
+                </div>
+            `,
+            quizzes: [{ question: '¿A qué distancia interválica está una mediante de la tónica?', options: ['2da', '3ra', '4ta', '5ta'], correct: 1 }]
+        },
+        {
+            id: 'tool-composition',
+            title: '11. Guía de composición',
+            type: 'tool',
+            toolInit: 'initComposition',
+            content: `
+                <div class="lesson-section">
+                    <h3>Guía de Composición</h3>
+                    <p>Técnicas detalladas: paleta armónica, melodía, ritmo, voicing, forma y piezas de referencia.</p>
+                    <div class="harmony-input-row">
+                        <label>Estilo: <select id="composeStyleSelect" class="harmony-key-input">
+                            <option value="ghibli">Studio Ghibli / Hisaishi</option>
+                            <option value="final_fantasy">Final Fantasy / Uematsu</option>
+                            <option value="cinematic">Cinematográfico General</option>
+                        </select></label>
+                        <button id="btnLoadCompose" class="btn btn-accent">Cargar</button>
+                    </div>
+                    <div id="compose-container" class="harmony-result"></div>
+                </div>
+            `,
+            quizzes: [{ question: '¿Qué elemento es fundamental para una buena composición cinematográfica?', options: ['Usar solo acordes mayores', 'Paleta armónica variada con intercambio modal', 'Tocar siempre forte', 'Evitar la melodía'], correct: 1 }]
+        },
+        {
+            id: 'tool-melody-resources',
+            title: '12. Recursos de melodía',
+            type: 'tool',
+            toolInit: null,
+            content: `
+                <div class="lesson-section">
+                    <h3>Recursos de melodía</h3>
+                    <p>Técnicas para enriquecer tus melodías usando notas fuera del acorde.</p>
+                    <div class="edu-img" onclick="openImageModal('/reference/recursos-melodia.png')">
+                        <img src="/reference/recursos-melodia.png" alt="Recursos de melodía" loading="lazy">
+                        <div class="edu-img-caption">Notas de paso, anticipaciones, floreos y otros recursos melódicos</div>
+                    </div>
+                    <div class="melody-resources-grid">
+                        <div class="melody-resource-card">
+                            <h4>Notas de paso</h4>
+                            <p>Entre dos notas del acorde, agrega notas de la escala (ascendente o descendente).</p>
+                            <button class="btn btn-accent btn-sm" onclick="HarmonyTools.playMelodyExample('passing')">Escuchar ejemplo</button>
+                        </div>
+                        <div class="melody-resource-card">
+                            <h4>Anticipaciones</h4>
+                            <p>Toca una nota del siguiente acorde antes de que llegue.</p>
+                            <button class="btn btn-accent btn-sm" onclick="HarmonyTools.playMelodyExample('anticipation')">Escuchar ejemplo</button>
+                        </div>
+                        <div class="melody-resource-card">
+                            <h4>Floreos</h4>
+                            <p>Toca la misma nota dos veces con una nota vecina en el medio.</p>
+                            <button class="btn btn-accent btn-sm" onclick="HarmonyTools.playMelodyExample('floreo')">Escuchar ejemplo</button>
+                        </div>
+                    </div>
+                </div>
+            `,
+            quizzes: [{ question: '¿Qué es una nota de paso?', options: ['Una nota del acorde', 'Una nota entre dos notas del acorde, de la escala', 'Una nota sostenida', 'Un silencio'], correct: 1 }]
+        },
+        // ============ REFERENCE LESSONS ============
+        {
+            id: 'ref-scale-browser',
+            title: '1. Navegador de escalas',
+            type: 'tool',
+            toolInit: 'initScaleBrowser',
+            content: `
+                <div class="lesson-section">
+                    <h3>Navegador de escalas</h3>
+                    <p>Explora todas las escalas en las 12 tonalidades. Cada tarjeta muestra las notas, un mini piano con las teclas resaltadas y los acordes diatónicos.</p>
+                    <div class="scale-browser-controls">
+                        <button class="btn btn-accent scale-type-btn active" data-scale-type="major">Mayores</button>
+                        <button class="btn btn-clear scale-type-btn" data-scale-type="natural_minor">Menores</button>
+                        <button class="btn btn-clear scale-type-btn" data-scale-type="harmonic_minor">Armónica</button>
+                        <button class="btn btn-clear scale-type-btn" data-scale-type="melodic_minor">Melódica</button>
+                        <button class="btn btn-clear scale-type-btn" data-scale-type="dorian">Dórica</button>
+                        <button class="btn btn-clear scale-type-btn" data-scale-type="phrygian">Frigia</button>
+                        <button class="btn btn-clear scale-type-btn" data-scale-type="lydian">Lidia</button>
+                        <button class="btn btn-clear scale-type-btn" data-scale-type="mixolydian">Mixolidia</button>
+                        <button class="btn btn-clear scale-type-btn" data-scale-type="locrian">Locria</button>
+                        <button class="btn btn-clear scale-type-btn" data-scale-type="pentatonic_major">Pentatónica</button>
+                        <button class="btn btn-clear scale-type-btn" data-scale-type="blues">Blues</button>
+                        <button class="btn btn-clear scale-type-btn" data-scale-type="whole_tone">Tono entero</button>
+                    </div>
+                    <div id="scale-browser-grid" class="scale-browser-grid"></div>
+                </div>
+            `,
+            quizzes: [{ question: '¿Cuántas notas tiene una escala pentatónica?', options: ['5', '6', '7', '8'], correct: 0 }]
+        },
+        {
+            id: 'ref-nomenclature',
+            title: '2. Nomenclatura de acordes',
+            type: 'reference',
+            content: `
+                <div class="lesson-section">
+                    <h3>Nomenclatura de acordes</h3>
+                    <p>Guía de símbolos y convenciones usados en cifrado de acordes.</p>
+                    <div class="reference-tables">
+                        <div class="ref-table-card">
+                            <h4>Símbolos básicos</h4>
+                            <table class="ref-table">
+                                <tr><th>Símbolo</th><th>Significado</th><th>Ejemplo</th></tr>
+                                <tr><td>(nada)</td><td>Mayor</td><td>C = Do mayor</td></tr>
+                                <tr><td>m</td><td>Menor</td><td>Cm = Do menor</td></tr>
+                                <tr><td>7</td><td>Dominante (7ma menor)</td><td>G7 = Sol dom7</td></tr>
+                                <tr><td>maj7 / Δ7</td><td>Séptima mayor</td><td>Cmaj7</td></tr>
+                                <tr><td>m7</td><td>Menor con 7ma menor</td><td>Am7</td></tr>
+                                <tr><td>dim / °</td><td>Disminuido (b3, b5)</td><td>Bdim</td></tr>
+                                <tr><td>aug / +</td><td>Aumentado (#5)</td><td>Caug</td></tr>
+                                <tr><td>ø / m7b5</td><td>Semidisminuido</td><td>Bm7b5</td></tr>
+                            </table>
+                        </div>
+                        <div class="ref-table-card">
+                            <h4>Suspendidos y agregados</h4>
+                            <table class="ref-table">
+                                <tr><th>Símbolo</th><th>Significado</th><th>Fórmula</th></tr>
+                                <tr><td>sus2</td><td>Suspendido 2da</td><td>1 - 2 - 5</td></tr>
+                                <tr><td>sus4</td><td>Suspendido 4ta</td><td>1 - 4 - 5</td></tr>
+                                <tr><td>add9</td><td>Agrega 9na (sin 7ma)</td><td>1 - 3 - 5 - 9</td></tr>
+                                <tr><td>6</td><td>Agrega 6ta</td><td>1 - 3 - 5 - 6</td></tr>
+                                <tr><td>7sus4</td><td>Dominante suspendido</td><td>1 - 4 - 5 - b7</td></tr>
+                            </table>
+                        </div>
+                        <div class="ref-table-card">
+                            <h4>Acordes extendidos</h4>
+                            <table class="ref-table">
+                                <tr><th>Símbolo</th><th>Significado</th><th>Incluye</th></tr>
+                                <tr><td>9</td><td>Dominante novena</td><td>1 - 3 - 5 - b7 - 9</td></tr>
+                                <tr><td>maj9</td><td>Mayor novena</td><td>1 - 3 - 5 - 7 - 9</td></tr>
+                                <tr><td>m9</td><td>Menor novena</td><td>1 - b3 - 5 - b7 - 9</td></tr>
+                                <tr><td>11</td><td>Dominante oncena</td><td>1 - 3 - 5 - b7 - 9 - 11</td></tr>
+                                <tr><td>13</td><td>Dominante trecena</td><td>1 - 3 - 5 - b7 - 9 - 11 - 13</td></tr>
+                            </table>
+                        </div>
+                        <div class="ref-table-card">
+                            <h4>Alteraciones y slash</h4>
+                            <table class="ref-table">
+                                <tr><th>Símbolo</th><th>Significado</th><th>Ejemplo</th></tr>
+                                <tr><td>b5</td><td>5ta disminuida</td><td>C7b5</td></tr>
+                                <tr><td>#5</td><td>5ta aumentada</td><td>C7#5</td></tr>
+                                <tr><td>b9</td><td>9na menor</td><td>G7b9</td></tr>
+                                <tr><td>#9</td><td>9na aumentada</td><td>G7#9 (acorde Hendrix)</td></tr>
+                                <tr><td>/X</td><td>Acorde slash (bajo = X)</td><td>C/E = Do con bajo en Mi</td></tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `,
+            quizzes: [{ question: '¿Qué significa el símbolo "ø" en un acorde?', options: ['Aumentado', 'Disminuido', 'Semidisminuido', 'Suspendido'], correct: 2 }]
+        },
+        {
+            id: 'ref-quick-tables',
+            title: '3. Tablas rápidas',
+            type: 'reference',
+            content: `
+                <div class="lesson-section">
+                    <h3>Tablas rápidas de referencia</h3>
+                    <div class="reference-tables">
+                        <div class="ref-table-card">
+                            <h4>Notas: Español - Inglés</h4>
+                            <table class="ref-table">
+                                <tr><th>Español</th><th>Inglés</th></tr>
+                                <tr><td>Do</td><td>C</td></tr><tr><td>Re</td><td>D</td></tr>
+                                <tr><td>Mi</td><td>E</td></tr><tr><td>Fa</td><td>F</td></tr>
+                                <tr><td>Sol</td><td>G</td></tr><tr><td>La</td><td>A</td></tr>
+                                <tr><td>Si</td><td>B</td></tr>
+                            </table>
+                        </div>
+                        <div class="ref-table-card">
+                            <h4>Fórmulas de acordes (semitonos)</h4>
+                            <table class="ref-table">
+                                <tr><th>Tipo</th><th>Fórmula</th><th>Ejemplo</th></tr>
+                                <tr><td>Mayor</td><td>4 + 3</td><td>C E G</td></tr>
+                                <tr><td>Menor</td><td>3 + 4</td><td>Cm: C Eb G</td></tr>
+                                <tr><td>Aumentado</td><td>4 + 4</td><td>Caug: C E G#</td></tr>
+                                <tr><td>Disminuido</td><td>3 + 3</td><td>Cdim: C Eb Gb</td></tr>
+                                <tr><td>dom7</td><td>4+3+3</td><td>C7: C E G Bb</td></tr>
+                                <tr><td>maj7</td><td>4+3+4</td><td>Cmaj7: C E G B</td></tr>
+                                <tr><td>m7</td><td>3+4+3</td><td>Cm7: C Eb G Bb</td></tr>
+                            </table>
+                        </div>
+                        <div class="ref-table-card">
+                            <h4>Grados y funciones</h4>
+                            <table class="ref-table">
+                                <tr><th>Grado</th><th>Numeral</th><th>Función</th></tr>
+                                <tr><td>1</td><td>I</td><td class="fn-tonic">Tónica (T)</td></tr>
+                                <tr><td>2</td><td>ii</td><td class="fn-subdominant">Subdominante (SD)</td></tr>
+                                <tr><td>3</td><td>iii</td><td class="fn-tonic">Tónica (T)</td></tr>
+                                <tr><td>4</td><td>IV</td><td class="fn-subdominant">Subdominante (SD)</td></tr>
+                                <tr><td>5</td><td>V</td><td class="fn-dominant">Dominante (D)</td></tr>
+                                <tr><td>6</td><td>vi</td><td class="fn-tonic">Tónica (T)</td></tr>
+                                <tr><td>7</td><td>vii°</td><td class="fn-dominant">Dominante (D)</td></tr>
+                            </table>
+                        </div>
+                        <div class="ref-table-card">
+                            <h4>Intervalos</h4>
+                            <table class="ref-table">
+                                <tr><th>ST</th><th>Nombre</th><th>Abrev.</th></tr>
+                                <tr><td>0</td><td>Unísono</td><td>1</td></tr>
+                                <tr><td>1</td><td>2da menor</td><td>b2</td></tr>
+                                <tr><td>2</td><td>2da mayor</td><td>2</td></tr>
+                                <tr><td>3</td><td>3era menor</td><td>b3</td></tr>
+                                <tr><td>4</td><td>3era mayor</td><td>3</td></tr>
+                                <tr><td>5</td><td>4ta justa</td><td>4</td></tr>
+                                <tr><td>6</td><td>Tritono</td><td>b5</td></tr>
+                                <tr><td>7</td><td>5ta justa</td><td>5</td></tr>
+                                <tr><td>8</td><td>6ta menor</td><td>b6</td></tr>
+                                <tr><td>9</td><td>6ta mayor</td><td>6</td></tr>
+                                <tr><td>10</td><td>7ma menor</td><td>b7</td></tr>
+                                <tr><td>11</td><td>7ma mayor</td><td>7</td></tr>
+                                <tr><td>12</td><td>Octava</td><td>8</td></tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `,
+            quizzes: [{ question: '¿Cuántos semitonos tiene una 5ta justa?', options: ['5', '6', '7', '8'], correct: 2 }]
+        },
+        {
+            id: 'ref-images',
+            title: '4. Imágenes de referencia',
+            type: 'reference',
+            content: `
+                <div class="lesson-section">
+                    <h3>Imágenes de referencia</h3>
+                    <p>Galería de diagramas, tablas y esquemas de teoría musical.</p>
+                    <div id="reference-gallery" class="reference-gallery"></div>
+                </div>
+            `,
+            quizzes: []
+        },
+        {
+            id: 'ref-pdf',
+            title: '5. PDF MusiHacks',
+            type: 'reference',
+            content: `
+                <div class="lesson-section">
+                    <h3>El Gran Libro de Armonía de MusiHacks</h3>
+                    <p>Manual completo de armonía funcional en PDF.</p>
+                    <div class="home-course">
+                        <div class="course-card">
+                            <div class="course-icon">📖</div>
+                            <div class="course-info">
+                                <h4>El Gran Libro de Armonía de MusiHacks</h4>
+                                <p>Manual completo de armonía funcional.</p>
+                                <a href="/reference/El%20Gran%20Libro%20de%20Armon%C3%ADa%20de%20Musihacks.pdf" target="_blank" class="btn btn-accent">Abrir PDF</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `,
+            quizzes: []
+        },
+        {
+            id: 'ref-curriculum',
+            title: '6. Ruta del Compositor',
+            type: 'reference',
+            content: `
+                <div class="lesson-section">
+                    <h3>Ruta del Compositor</h3>
+                    <p>5 niveles progresivos para componer como Chopin, Rachmaninoff, Hisaishi y Uematsu.</p>
+                </div>
+                <div class="lesson-section">
+                    <details class="resource-category" open>
+                        <summary class="resource-category-title">Nivel 1 — Fundamentos</summary>
+                        <div class="resource-grid">
+                            <div class="resource-card resource-book"><div class="resource-badge">Book</div><h4>Music Theory for the Self-Taught Musician</h4><p class="resource-author">Will Metz</p><p>Punto de inicio amigable: notas, intervalos, escalas, acordes y progresiones básicas.</p></div>
+                            <div class="resource-card resource-video"><div class="resource-badge">YouTube</div><h4>Michael New — Music Theory from the Ground Up</h4><p class="resource-author">Michael New</p><p>Explicaciones claras con piano. Desde "qué es una nota" hasta acordes, escalas, modos.</p></div>
+                        </div>
+                    </details>
+                </div>
+                <div class="lesson-section">
+                    <details class="resource-category">
+                        <summary class="resource-category-title">Nivel 2 — Armonía Funcional</summary>
+                        <div class="resource-grid">
+                            <div class="resource-card resource-book"><div class="resource-badge">Book</div><h4>Tonal Harmony (Kostka & Payne)</h4><p>El textbook estándar de armonía. Acordes diatónicos, voice leading, cadencias.</p></div>
+                            <div class="resource-card resource-video"><div class="resource-badge">YouTube</div><h4>Seth Monahan — Functional Harmony</h4><p>Cómo funcionan los acordes dentro de las tonalidades: tónica, predominante, dominante.</p></div>
+                        </div>
+                    </details>
+                </div>
+                <div class="lesson-section">
+                    <details class="resource-category">
+                        <summary class="resource-category-title">Nivel 3 — Cromática y Romántica</summary>
+                        <div class="resource-grid">
+                            <div class="resource-card resource-book"><div class="resource-badge">Book</div><h4>The Romantic Generation (Charles Rosen)</h4><p>Estudio profundo de la armonía romántica. Capítulos sobre Chopin, Schumann, Liszt.</p></div>
+                            <div class="resource-card resource-book"><div class="resource-badge">Book</div><h4>Tonal Harmony (ch. 13+)</h4><p>Dominantes secundarios, acordes prestados, Napolitano, sextas aumentadas, modulación.</p></div>
+                        </div>
+                    </details>
+                </div>
+                <div class="lesson-section">
+                    <details class="resource-category">
+                        <summary class="resource-category-title">Nivel 4 — Modal y Cinematográfica</summary>
+                        <div class="resource-grid">
+                            <div class="resource-card resource-book"><div class="resource-badge">Book</div><h4>On the Track (Karlin & Wright)</h4><p>Guía estándar de composición para cine: función dramática de la música, orquestación, técnicas armónicas.</p></div>
+                            <div class="resource-card resource-book"><div class="resource-badge">Book</div><h4>Complete Guide to Film Scoring (Richard Davis)</h4><p>Textbook de Berklee para composición audiovisual.</p></div>
+                        </div>
+                    </details>
+                </div>
+                <div class="lesson-section">
+                    <details class="resource-category">
+                        <summary class="resource-category-title">Nivel 5 — Composición y Maestría</summary>
+                        <div class="resource-grid">
+                            <div class="resource-card resource-book"><div class="resource-badge">Book</div><h4>Reharmonization Techniques (Randy Felts)</h4><p>El mejor libro de reharmonización: sustituciones, passing chords, approach chords, bajo cromático.</p></div>
+                            <div class="resource-card resource-book"><div class="resource-badge">Book</div><h4>Melody in Songwriting (Jack Perricone)</h4><p>Cómo escribir melodías memorables: prosodia, contorno, ritmo, fraseo.</p></div>
+                        </div>
+                    </details>
+                </div>
+            `,
+            quizzes: []
+        },
     ];
 
     // ============ UNITS ============
     const units = [
-        { id: 'u1', title: 'Unidad 1: Fundamentos', subtitle: 'Notas, semitonos, escalas y los cimientos de la música', icon: '🎹', color: 'red', lessonIds: ['notes', 'sharps-flats', 'english-notes', 'semitone-tone', 'scales'] },
-        { id: 'u2', title: 'Unidad 2: Acordes y Tonalidad', subtitle: 'Tríadas, inversiones, séptimas y funciones armónicas', icon: '🎵', color: 'blue', lessonIds: ['triads', 'inversions', 'slash-chords', 'seventh-chords', 'tonality'] },
-        { id: 'u3', title: 'Unidad 3: Armonía Intermedia', subtitle: 'Dominantes secundarios, cadencias y lectura musical', icon: '🎼', color: 'green', lessonIds: ['secondary-dominants', 'cadences', 'reading'] },
-        { id: 'u4', title: 'Unidad 4: Pop Avanzado / Neo-soul', subtitle: 'Acordes extendidos y reharmonización', icon: '🎧', color: 'purple', lessonIds: ['extended-chords', 'reharmonization'] },
-        { id: 'u5', title: 'Unidad 5: Jazz', subtitle: 'ii-V-I, voicing, modos y guide tones', icon: '🎷', color: 'yellow', lessonIds: ['jazz-fundamentals', 'voicing', 'modal-harmony'] },
-        { id: 'u6', title: 'Unidad 6: Clásico / Impresionista', subtitle: 'Debussy, Chopin, Ravel: color, cromatismo y atmósfera', icon: '🎻', color: 'orange', lessonIds: ['impressionist', 'romantic'] },
-        { id: 'u7', title: 'Unidad 7: Anime / Cine / Maestría', subtitle: 'Hisaishi, Uematsu y análisis de partituras', icon: '🎬', color: 'teal', lessonIds: ['japanese-anime', 'score-analysis'] },
-        { id: 'u8', title: 'Unidad 8: Práctica Aplicada', subtitle: 'Ruta de estudio completa e himnos al piano', icon: '📖', color: 'pink', lessonIds: ['study-roadmap', 'hymns'] },
+        // Teoría (U1-U8)
+        { id: 'u1', title: 'Unidad 1: Fundamentos', subtitle: 'Notas, semitonos, escalas y los cimientos de la música', icon: '🎹', color: 'red', lessonIds: ['notes', 'sharps-flats', 'english-notes', 'semitone-tone', 'scales'], section: 'teoria' },
+        { id: 'u2', title: 'Unidad 2: Acordes y Tonalidad', subtitle: 'Tríadas, inversiones, séptimas y funciones armónicas', icon: '🎵', color: 'blue', lessonIds: ['triads', 'inversions', 'slash-chords', 'seventh-chords', 'tonality'], section: 'teoria' },
+        { id: 'u3', title: 'Unidad 3: Armonía Intermedia', subtitle: 'Dominantes secundarios, cadencias y lectura musical', icon: '🎼', color: 'green', lessonIds: ['secondary-dominants', 'cadences', 'reading'], section: 'teoria' },
+        { id: 'u4', title: 'Unidad 4: Pop Avanzado / Neo-soul', subtitle: 'Acordes extendidos y reharmonización', icon: '🎧', color: 'purple', lessonIds: ['extended-chords', 'reharmonization'], section: 'teoria' },
+        { id: 'u5', title: 'Unidad 5: Jazz', subtitle: 'ii-V-I, voicing, modos y guide tones', icon: '🎷', color: 'yellow', lessonIds: ['jazz-fundamentals', 'voicing', 'modal-harmony'], section: 'teoria' },
+        { id: 'u6', title: 'Unidad 6: Clásico / Impresionista', subtitle: 'Debussy, Chopin, Ravel: color, cromatismo y atmósfera', icon: '🎻', color: 'orange', lessonIds: ['impressionist', 'romantic'], section: 'teoria' },
+        { id: 'u7', title: 'Unidad 7: Anime / Cine / Maestría', subtitle: 'Hisaishi, Uematsu y análisis de partituras', icon: '🎬', color: 'teal', lessonIds: ['japanese-anime', 'score-analysis'], section: 'teoria' },
+        { id: 'u8', title: 'Unidad 8: Práctica Aplicada', subtitle: 'Ruta de estudio completa e himnos al piano', icon: '📖', color: 'pink', lessonIds: ['study-roadmap', 'hymns'], section: 'teoria' },
+        // Herramientas Armónicas (U9-U10)
+        { id: 'u9', title: 'Unidad 9: Herramientas Armónicas', subtitle: 'SUS4, cadencias, tritono, modal, negativa, Chopin bass', icon: '🔧', color: 'indigo', lessonIds: ['tool-sus4', 'tool-cadences', 'tool-tritone', 'tool-modal', 'tool-negative', 'tool-chopin-bass'], section: 'herramientas' },
+        { id: 'u10', title: 'Unidad 10: Técnicas Creativas', subtitle: 'Melodía, cinematográfico, improvisación, mediantes, composición', icon: '🎨', color: 'cyan', lessonIds: ['tool-melody-suggest', 'tool-cinematic', 'tool-improv', 'tool-mediants', 'tool-composition', 'tool-melody-resources'], section: 'herramientas' },
+        // Referencia (U11-U12)
+        { id: 'u11', title: 'Unidad 11: Escalas y Referencia', subtitle: 'Navegador de escalas, nomenclatura, tablas rápidas, imágenes', icon: '📊', color: 'emerald', lessonIds: ['ref-scale-browser', 'ref-nomenclature', 'ref-quick-tables', 'ref-images'], section: 'referencia' },
+        { id: 'u12', title: 'Unidad 12: Recursos Complementarios', subtitle: 'PDF MusiHacks y ruta del compositor', icon: '📚', color: 'amber', lessonIds: ['ref-pdf', 'ref-curriculum'], section: 'referencia' },
     ];
 
     let completedLessons = new Set();
@@ -3099,11 +3699,44 @@ const Theory = (() => {
 
         if (!content) return;
 
+        const totalLessons = lessons.length;
+        const totalCompleted = completedLessons.size;
+
         let html = '<h2>Curso de Teoría Musical</h2>';
-        html += '<p style="color:var(--text-muted);margin-bottom:16px;">8 unidades · 24 lecciones interactivas · Desde fundamentos hasta maestría</p>';
+        html += `<p style="color:var(--text-muted);margin-bottom:16px;">${units.length} unidades · ${totalLessons} lecciones interactivas · Desde fundamentos hasta maestría</p>`;
+
+        // Quick-access pill bar
+        html += `
+            <div class="theory-quick-access">
+                <button class="theory-quick-pill" data-ref="intervals"><span class="theory-quick-pill-icon">📏</span> Intervalos</button>
+                <button class="theory-quick-pill" data-ref="chord-formulas"><span class="theory-quick-pill-icon">🎵</span> Fórmulas de Acordes</button>
+                <button class="theory-quick-pill" data-ref="degrees"><span class="theory-quick-pill-icon">🏛️</span> Grados y Funciones</button>
+                <button class="theory-quick-pill" data-ref="scales"><span class="theory-quick-pill-icon">🎹</span> Escalas</button>
+                <button class="theory-quick-pill" data-ref="circle"><span class="theory-quick-pill-icon">⭕</span> Círculo de Quintas</button>
+            </div>
+        `;
+
         html += '<div class="theory-dashboard-grid">';
 
+        let currentSection = null;
         for (const unit of units) {
+            // Section separator
+            if (unit.section && unit.section !== currentSection) {
+                currentSection = unit.section;
+                const sectionLabels = {
+                    'teoria': 'Teoría Musical',
+                    'herramientas': 'Herramientas Armónicas',
+                    'referencia': 'Referencia y Recursos',
+                };
+                html += `
+                    <div class="theory-section-separator">
+                        <div class="theory-section-separator-line"></div>
+                        <span class="theory-section-separator-label">${sectionLabels[currentSection] || currentSection}</span>
+                        <div class="theory-section-separator-line"></div>
+                    </div>
+                `;
+            }
+
             const prog = getUnitProgress(unit);
             const pct = prog.total > 0 ? Math.round((prog.completed / prog.total) * 100) : 0;
             html += `
@@ -3132,6 +3765,13 @@ const Theory = (() => {
                 const uid = card.dataset.unitId;
                 const unit = units.find(u => u.id === uid);
                 if (unit) showUnit(unit);
+            });
+        });
+
+        // Bind quick-access pills
+        content.querySelectorAll('.theory-quick-pill').forEach(pill => {
+            pill.addEventListener('click', () => {
+                showQuickReference(pill.dataset.ref);
             });
         });
     }
@@ -3291,6 +3931,9 @@ const Theory = (() => {
         setupExampleButtons();
         setupQuiz();
 
+        // Initialize tool lesson if applicable
+        initToolLesson(lesson);
+
         // Scroll to top of content
         content.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
@@ -3431,6 +4074,190 @@ const Theory = (() => {
         return noteNames;
     }
 
+    function initToolLesson(lesson) {
+        if (!lesson.type || lesson.type === 'standard') return;
+
+        if (lesson.type === 'tool' && lesson.toolInit) {
+            // Call the appropriate HarmonyTools initializer
+            if (typeof HarmonyTools !== 'undefined' && typeof HarmonyTools[lesson.toolInit] === 'function') {
+                setTimeout(() => HarmonyTools[lesson.toolInit](), 50);
+            }
+            // Special case: scale browser needs its own init
+            if (lesson.toolInit === 'initScaleBrowser') {
+                setTimeout(() => initScaleBrowserLesson(), 100);
+            }
+        }
+
+        // Reference images gallery
+        if (lesson.id === 'ref-images') {
+            setTimeout(() => renderReferenceGallery(), 50);
+        }
+    }
+
+    function initScaleBrowserLesson() {
+        // Set up scale-type-btn handlers and load default
+        const container = document.getElementById('theory-content');
+        if (!container) return;
+
+        container.querySelectorAll('.scale-type-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                container.querySelectorAll('.scale-type-btn').forEach(b => {
+                    b.classList.remove('active');
+                    b.classList.add('btn-clear');
+                    b.classList.remove('btn-accent');
+                });
+                btn.classList.add('active');
+                btn.classList.remove('btn-clear');
+                btn.classList.add('btn-accent');
+                if (typeof loadScaleBrowser === 'function') {
+                    loadScaleBrowser(btn.dataset.scaleType);
+                } else if (typeof window.loadScaleBrowser === 'function') {
+                    window.loadScaleBrowser(btn.dataset.scaleType);
+                }
+            });
+        });
+
+        // Load default
+        if (typeof loadScaleBrowser === 'function') {
+            loadScaleBrowser('major');
+        } else if (typeof window.loadScaleBrowser === 'function') {
+            window.loadScaleBrowser('major');
+        }
+    }
+
+    function renderReferenceGallery() {
+        const gallery = document.getElementById('reference-gallery');
+        if (!gallery) return;
+
+        const images = [
+            { src: '/reference/dominantes-sus4.png', title: 'Dominantes SUS4' },
+            { src: '/reference/recursos-melodia.png', title: 'Recursos de melodía' },
+            { src: '/reference/cadencias.png', title: 'Cadencias' },
+            { src: '/reference/circle-of-fifths.png', title: 'Círculo de quintas' },
+        ];
+
+        let html = '<div class="ref-gallery-grid">';
+        for (const img of images) {
+            html += `
+                <div class="ref-gallery-item" onclick="openImageModal('${img.src}')">
+                    <img src="${img.src}" alt="${img.title}" loading="lazy">
+                    <div class="ref-gallery-caption">${img.title}</div>
+                </div>
+            `;
+        }
+        html += '</div>';
+        gallery.innerHTML = html;
+    }
+
+    function showQuickReference(refType) {
+        const modal = document.getElementById('ref-quick-modal');
+        const body = document.getElementById('ref-quick-modal-body');
+        if (!modal || !body) return;
+
+        const tables = {
+            'intervals': {
+                title: 'Intervalos',
+                html: `<table><tr><th>ST</th><th>Nombre</th><th>Abrev.</th></tr>
+                    <tr><td>0</td><td>Unísono</td><td>1</td></tr>
+                    <tr><td>1</td><td>2da menor</td><td>b2</td></tr>
+                    <tr><td>2</td><td>2da mayor</td><td>2</td></tr>
+                    <tr><td>3</td><td>3era menor</td><td>b3</td></tr>
+                    <tr><td>4</td><td>3era mayor</td><td>3</td></tr>
+                    <tr><td>5</td><td>4ta justa</td><td>4</td></tr>
+                    <tr><td>6</td><td>Tritono</td><td>b5/#4</td></tr>
+                    <tr><td>7</td><td>5ta justa</td><td>5</td></tr>
+                    <tr><td>8</td><td>6ta menor</td><td>b6</td></tr>
+                    <tr><td>9</td><td>6ta mayor</td><td>6</td></tr>
+                    <tr><td>10</td><td>7ma menor</td><td>b7</td></tr>
+                    <tr><td>11</td><td>7ma mayor</td><td>7</td></tr>
+                    <tr><td>12</td><td>Octava</td><td>8</td></tr></table>`
+            },
+            'chord-formulas': {
+                title: 'Fórmulas de Acordes',
+                html: `<table><tr><th>Tipo</th><th>Fórmula (ST)</th><th>Ejemplo en C</th></tr>
+                    <tr><td>Mayor</td><td>4 + 3</td><td>C E G</td></tr>
+                    <tr><td>Menor</td><td>3 + 4</td><td>C Eb G</td></tr>
+                    <tr><td>Aumentado</td><td>4 + 4</td><td>C E G#</td></tr>
+                    <tr><td>Disminuido</td><td>3 + 3</td><td>C Eb Gb</td></tr>
+                    <tr><td>dom7</td><td>4+3+3</td><td>C E G Bb</td></tr>
+                    <tr><td>maj7</td><td>4+3+4</td><td>C E G B</td></tr>
+                    <tr><td>m7</td><td>3+4+3</td><td>C Eb G Bb</td></tr>
+                    <tr><td>dim7</td><td>3+3+3</td><td>C Eb Gb Bbb</td></tr>
+                    <tr><td>m7b5</td><td>3+3+4</td><td>C Eb Gb Bb</td></tr>
+                    <tr><td>sus2</td><td>2 + 5</td><td>C D G</td></tr>
+                    <tr><td>sus4</td><td>5 + 2</td><td>C F G</td></tr></table>`
+            },
+            'degrees': {
+                title: 'Grados y Funciones Armónicas',
+                html: `<table><tr><th>Grado</th><th>Numeral</th><th>Calidad</th><th>Función</th></tr>
+                    <tr><td>1</td><td>I</td><td>Mayor</td><td style="color:var(--tonic)">Tónica (T)</td></tr>
+                    <tr><td>2</td><td>ii</td><td>Menor</td><td style="color:var(--subdominant)">Subdominante (SD)</td></tr>
+                    <tr><td>3</td><td>iii</td><td>Menor</td><td style="color:var(--tonic)">Tónica (T)</td></tr>
+                    <tr><td>4</td><td>IV</td><td>Mayor</td><td style="color:var(--subdominant)">Subdominante (SD)</td></tr>
+                    <tr><td>5</td><td>V</td><td>Mayor</td><td style="color:var(--dominant)">Dominante (D)</td></tr>
+                    <tr><td>6</td><td>vi</td><td>Menor</td><td style="color:var(--tonic)">Tónica (T)</td></tr>
+                    <tr><td>7</td><td>vii°</td><td>Disminuido</td><td style="color:var(--dominant)">Dominante (D)</td></tr></table>`
+            },
+            'scales': {
+                title: 'Escalas comunes',
+                html: `<table><tr><th>Escala</th><th>Fórmula (T/ST)</th><th>Ejemplo en C</th></tr>
+                    <tr><td>Mayor</td><td>T-T-ST-T-T-T-ST</td><td>C D E F G A B</td></tr>
+                    <tr><td>Menor natural</td><td>T-ST-T-T-ST-T-T</td><td>C D Eb F G Ab Bb</td></tr>
+                    <tr><td>Menor armónica</td><td>T-ST-T-T-ST-1½-ST</td><td>C D Eb F G Ab B</td></tr>
+                    <tr><td>Dórica</td><td>T-ST-T-T-T-ST-T</td><td>C D Eb F G A Bb</td></tr>
+                    <tr><td>Frigia</td><td>ST-T-T-T-ST-T-T</td><td>C Db Eb F G Ab Bb</td></tr>
+                    <tr><td>Lidia</td><td>T-T-T-ST-T-T-ST</td><td>C D E F# G A B</td></tr>
+                    <tr><td>Mixolidia</td><td>T-T-ST-T-T-ST-T</td><td>C D E F G A Bb</td></tr>
+                    <tr><td>Pentatónica mayor</td><td>T-T-1½-T-1½</td><td>C D E G A</td></tr>
+                    <tr><td>Blues</td><td>1½-T-ST-ST-1½-T</td><td>C Eb F Gb G Bb</td></tr></table>`
+            },
+            'circle': {
+                title: 'Círculo de Quintas',
+                html: `<div style="text-align:center;margin-bottom:16px">
+                    <img src="/reference/circle-of-fifths.png" alt="Círculo de quintas" style="max-width:100%;max-height:400px;border-radius:8px;cursor:pointer" onclick="openImageModal('/reference/circle-of-fifths.png')">
+                </div>
+                <table><tr><th>#</th><th>Tonalidad</th><th>Alteraciones</th></tr>
+                    <tr><td>0</td><td>C / Am</td><td>—</td></tr>
+                    <tr><td>1#</td><td>G / Em</td><td>F#</td></tr>
+                    <tr><td>2#</td><td>D / Bm</td><td>F# C#</td></tr>
+                    <tr><td>3#</td><td>A / F#m</td><td>F# C# G#</td></tr>
+                    <tr><td>4#</td><td>E / C#m</td><td>F# C# G# D#</td></tr>
+                    <tr><td>1b</td><td>F / Dm</td><td>Bb</td></tr>
+                    <tr><td>2b</td><td>Bb / Gm</td><td>Bb Eb</td></tr>
+                    <tr><td>3b</td><td>Eb / Cm</td><td>Bb Eb Ab</td></tr>
+                    <tr><td>4b</td><td>Ab / Fm</td><td>Bb Eb Ab Db</td></tr></table>`
+            },
+        };
+
+        const ref = tables[refType];
+        if (!ref) return;
+
+        body.innerHTML = `<h3>${ref.title}</h3>${ref.html}`;
+        modal.classList.remove('hidden');
+
+        // Close handlers
+        const backdrop = modal.querySelector('.ref-quick-modal-backdrop');
+        const closeBtn = modal.querySelector('.ref-quick-modal-close');
+
+        function closeModal() {
+            modal.classList.add('hidden');
+            backdrop.removeEventListener('click', closeModal);
+            closeBtn.removeEventListener('click', closeModal);
+        }
+
+        backdrop.addEventListener('click', closeModal);
+        closeBtn.addEventListener('click', closeModal);
+
+        // Close on Escape
+        const escHandler = (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+                document.removeEventListener('keydown', escHandler);
+            }
+        };
+        document.addEventListener('keydown', escHandler);
+    }
+
     function showDashboard() {
         renderDashboard();
     }
@@ -3443,5 +4270,5 @@ const Theory = (() => {
         return currentUnit;
     }
 
-    return { init, showLesson, showDashboard, showUnit, getCurrentView, getCurrentUnit, lessons, units };
+    return { init, showLesson, showDashboard, showUnit, getCurrentView, getCurrentUnit, showQuickReference, lessons, units };
 })();

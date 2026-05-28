@@ -5666,6 +5666,319 @@ footer {
 .theory-unit-card[data-color="orange"] { border-left-color: #f97316; }
 .theory-unit-card[data-color="teal"]   { border-left-color: #2dd4bf; }
 .theory-unit-card[data-color="pink"]   { border-left-color: #f472b6; }
+.theory-unit-card[data-color="indigo"] { border-left-color: #818cf8; }
+.theory-unit-card[data-color="cyan"]   { border-left-color: #22d3ee; }
+.theory-unit-card[data-color="emerald"]{ border-left-color: #34d399; }
+.theory-unit-card[data-color="amber"]  { border-left-color: #fbbf24; }
+
+/* Section separators in course dashboard */
+.theory-section-separator {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 28px 0 16px;
+    grid-column: 1 / -1;
+}
+
+.theory-section-separator-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+}
+
+.theory-section-separator-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+/* Quick-access pill bar */
+.theory-quick-access {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+    padding: 12px 0;
+}
+
+.theory-quick-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text);
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+}
+
+.theory-quick-pill:hover {
+    border-color: var(--accent-blue);
+    background: var(--bg-surface);
+    color: var(--accent-blue);
+}
+
+.theory-quick-pill-icon {
+    font-size: 0.9rem;
+}
+
+/* Quick Reference Modal */
+.ref-quick-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ref-quick-modal.hidden {
+    display: none;
+}
+
+.ref-quick-modal-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.65);
+}
+
+.ref-quick-modal-content {
+    position: relative;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    max-width: 700px;
+    width: 92%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+    z-index: 1;
+}
+
+.ref-quick-modal-close {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.6rem;
+    cursor: pointer;
+    line-height: 1;
+    padding: 4px;
+    transition: color 0.15s;
+}
+
+.ref-quick-modal-close:hover {
+    color: var(--accent);
+}
+
+#ref-quick-modal-body h3 {
+    margin-bottom: 12px;
+    font-size: 1.1rem;
+}
+
+#ref-quick-modal-body table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+}
+
+#ref-quick-modal-body th,
+#ref-quick-modal-body td {
+    padding: 8px 10px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+
+#ref-quick-modal-body th {
+    background: var(--bg-surface);
+    font-weight: 600;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+}
+
+#ref-quick-modal-body td {
+    color: var(--text);
+}
+
+/* Tool lesson wrapper - for harmony tools rendered inside lessons */
+.tool-lesson-wrapper {
+    margin-top: 16px;
+}
+
+.tool-lesson-wrapper .harmony-tool {
+    border: none;
+    padding: 0;
+    margin-bottom: 0;
+}
+
+/* Reference tables inside lessons */
+.reference-tables {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+    margin-top: 12px;
+}
+
+.ref-table-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+}
+
+.ref-table-card h4 {
+    margin-bottom: 10px;
+    font-size: 0.95rem;
+}
+
+.ref-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.ref-table th,
+.ref-table td {
+    padding: 6px 8px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+
+.ref-table th {
+    background: var(--bg-card);
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+/* Reference gallery */
+.ref-gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+    margin-top: 12px;
+}
+
+.ref-gallery-item {
+    cursor: pointer;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: border-color 0.15s, transform 0.15s;
+}
+
+.ref-gallery-item:hover {
+    border-color: var(--accent-blue);
+    transform: translateY(-2px);
+}
+
+.ref-gallery-item img {
+    width: 100%;
+    display: block;
+}
+
+.ref-gallery-caption {
+    padding: 8px 10px;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    text-align: center;
+    background: var(--bg-surface);
+}
+
+/* Resource cards for curriculum */
+.resource-category {
+    margin-bottom: 8px;
+}
+
+.resource-category-title {
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 10px 0;
+    color: var(--text);
+}
+
+.resource-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+    margin-top: 8px;
+    padding-bottom: 12px;
+}
+
+.resource-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    position: relative;
+}
+
+.resource-card h4 {
+    font-size: 0.95rem;
+    margin-bottom: 4px;
+}
+
+.resource-card p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+.resource-badge {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-bottom: 6px;
+}
+
+.resource-book .resource-badge {
+    background: rgba(168, 85, 247, 0.15);
+    color: #a78bfa;
+}
+
+.resource-video .resource-badge {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+}
+
+.resource-author {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+}
+
+@media (max-width: 700px) {
+    .reference-tables {
+        grid-template-columns: 1fr;
+    }
+    .ref-gallery-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+    .resource-grid {
+        grid-template-columns: 1fr;
+    }
+}
 
 /* Lesson cards within a unit view */
 .theory-lesson-card {
