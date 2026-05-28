@@ -29,6 +29,15 @@
     --radius-lg: 12px;
     --shadow: 0 2px 8px rgba(0,0,0,0.3);
     --max-width: 1100px;
+    /* Glow system */
+    --glow-cyan: #58a6ff;
+    --glow-cyan-muted: rgba(88, 166, 255, 0.15);
+    --glow-cyan-border: rgba(88, 166, 255, 0.3);
+    --glow-sm: 0 0 8px rgba(88, 166, 255, 0.15);
+    --glow-md: 0 0 15px rgba(88, 166, 255, 0.2), 0 0 4px rgba(88, 166, 255, 0.1);
+    --glow-lg: 0 0 20px rgba(88, 166, 255, 0.25), 0 0 6px rgba(88, 166, 255, 0.15);
+    --bg-card-glow: linear-gradient(135deg, rgba(88, 166, 255, 0.03) 0%, transparent 60%);
+    --border-glow: rgba(88, 166, 255, 0.2);
 }
 
 html {
@@ -660,8 +669,10 @@ header h1 {
 .btn-stop { background: #555; color: white; }
 .btn-play { background: var(--tonic); color: white; }
 .btn-analyze { background: var(--accent); color: white; }
-.btn-clear { background: var(--bg-surface); color: var(--text-muted); border: 1px solid var(--border); }
-.btn-accent { background: var(--accent); color: white; }
+.btn-clear { background: var(--bg-surface); color: var(--text-muted); border: 1px solid var(--border); transition: all 0.12s; }
+.btn-clear:hover { border-color: var(--glow-cyan-border); box-shadow: var(--glow-sm); color: var(--glow-cyan); }
+.btn-accent { background: var(--accent); color: white; transition: all 0.12s; }
+.btn-accent:hover { box-shadow: 0 0 12px rgba(233, 69, 96, 0.3), 0 0 4px rgba(233, 69, 96, 0.15); }
 
 #recordingStatus {
     color: var(--accent);
@@ -711,8 +722,11 @@ header h1 {
 }
 
 .nav-tab.active {
-    color: var(--accent-light);
-    border-bottom-color: var(--accent);
+    color: var(--glow-cyan);
+    border-bottom-color: var(--glow-cyan);
+    background: var(--glow-cyan-muted);
+    text-shadow: 0 0 8px rgba(88, 166, 255, 0.4);
+    box-shadow: 0 2px 8px rgba(88, 166, 255, 0.15);
 }
 
 /* === Tab Content === */
@@ -756,6 +770,7 @@ main {
     -webkit-text-fill-color: transparent;
     background-clip: text;
     letter-spacing: -0.5px;
+    filter: drop-shadow(0 0 12px rgba(88, 166, 255, 0.3));
 }
 
 .home-hero p {
@@ -793,7 +808,6 @@ main {
 
 .hub-card:hover {
     transform: translateY(-3px);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
     background: var(--bg-surface);
 }
 
@@ -804,12 +818,12 @@ main {
 .hub-card--orange { border-left-color: var(--subdominant); }
 .hub-card--teal { border-left-color: #64d8cb; }
 
-.hub-card--accent:hover { border-left-color: var(--accent-light); }
-.hub-card--blue:hover { border-left-color: #79bbff; }
-.hub-card--green:hover { border-left-color: #5ed370; }
-.hub-card--purple:hover { border-left-color: #d0a8ff; }
-.hub-card--orange:hover { border-left-color: #e8b84a; }
-.hub-card--teal:hover { border-left-color: #8ae8dd; }
+.hub-card--accent:hover { border-left-color: var(--accent-light); box-shadow: 0 0 15px rgba(233, 69, 96, 0.2), 0 8px 24px rgba(0,0,0,0.3); }
+.hub-card--blue:hover { border-left-color: #79bbff; box-shadow: 0 0 15px rgba(88, 166, 255, 0.2), 0 8px 24px rgba(0,0,0,0.3); }
+.hub-card--green:hover { border-left-color: #5ed370; box-shadow: 0 0 15px rgba(63, 185, 80, 0.2), 0 8px 24px rgba(0,0,0,0.3); }
+.hub-card--purple:hover { border-left-color: #d0a8ff; box-shadow: 0 0 15px rgba(179, 136, 255, 0.2), 0 8px 24px rgba(0,0,0,0.3); }
+.hub-card--orange:hover { border-left-color: #e8b84a; box-shadow: 0 0 15px rgba(210, 153, 34, 0.2), 0 8px 24px rgba(0,0,0,0.3); }
+.hub-card--teal:hover { border-left-color: #8ae8dd; box-shadow: 0 0 15px rgba(100, 216, 203, 0.2), 0 8px 24px rgba(0,0,0,0.3); }
 
 .hub-card-icon {
     font-size: 2rem;
@@ -873,6 +887,12 @@ main {
     display: flex;
     align-items: center;
     gap: 10px;
+    transition: box-shadow 0.15s, border-color 0.15s;
+}
+
+.stat-card:hover {
+    border-color: var(--border-glow);
+    box-shadow: var(--glow-sm);
 }
 
 .stat-icon {
@@ -1160,6 +1180,8 @@ section {
     color: white;
     border-color: var(--accent);
     box-shadow: 0 2px 8px rgba(233, 69, 96, 0.3);
+    outline: 1px solid var(--glow-cyan-border);
+    outline-offset: 2px;
 }
 
 /* === Studio Sections === */
@@ -1759,14 +1781,15 @@ section {
 }
 
 .cadence-card:hover {
-    border-color: var(--accent);
+    border-color: var(--glow-cyan-border);
     transform: translateY(-2px);
-    box-shadow: var(--shadow);
+    box-shadow: var(--glow-sm);
 }
 
 .cadence-card.playing {
     border-color: var(--accent);
     background: rgba(233, 69, 96, 0.15);
+    box-shadow: 0 0 15px rgba(233, 69, 96, 0.25), 0 0 4px rgba(233, 69, 96, 0.15);
 }
 
 .cadence-card .cadence-name { font-weight: 700; color: var(--accent-light); margin-bottom: 4px; }
@@ -2091,6 +2114,7 @@ section {
     background: linear-gradient(90deg, var(--accent), var(--accent-blue));
     border-radius: 4px;
     transition: width 0.3s ease;
+    box-shadow: 0 0 8px rgba(88, 166, 255, 0.3);
 }
 
 .progress-text {
@@ -2582,10 +2606,11 @@ footer {
 }
 
 .btn-back:hover {
-    color: var(--accent-light);
-    border-color: var(--accent);
-    background: rgba(233, 69, 96, 0.1);
+    color: var(--glow-cyan);
+    border-color: var(--glow-cyan-border);
+    background: var(--glow-cyan-muted);
     transform: translateX(-2px);
+    box-shadow: var(--glow-sm);
 }
 
 /* (shortcut styles removed - replaced by hub-card)
@@ -2891,9 +2916,9 @@ footer {
 }
 
 .scale-card:hover {
-    border-color: var(--accent);
+    border-color: var(--glow-cyan-border);
     transform: translateY(-2px);
-    box-shadow: var(--shadow);
+    box-shadow: var(--glow-sm);
 }
 
 .scale-card-header {
@@ -3807,6 +3832,29 @@ footer {
 
     .chordify-piano-card {
         max-width: 100%;
+    }
+
+    /* Reduce glow intensity on mobile */
+    :root {
+        --glow-sm: 0 0 6px rgba(88, 166, 255, 0.1);
+        --glow-md: 0 0 10px rgba(88, 166, 255, 0.15), 0 0 3px rgba(88, 166, 255, 0.08);
+        --glow-lg: 0 0 14px rgba(88, 166, 255, 0.18), 0 0 4px rgba(88, 166, 255, 0.1);
+    }
+
+    .theory-unit-card {
+        box-shadow: none;
+    }
+
+    .theory-unit-card:hover {
+        box-shadow: var(--glow-sm), 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    .nav-tab.active {
+        box-shadow: none;
+    }
+
+    .home-hero h2 {
+        filter: drop-shadow(0 0 8px rgba(88, 166, 255, 0.2));
     }
 }
 
@@ -5565,8 +5613,9 @@ footer {
 }
 
 .theory-breadcrumb-link:hover {
-    color: var(--accent-light);
+    color: var(--glow-cyan);
     text-decoration: underline;
+    text-shadow: 0 0 8px rgba(88, 166, 255, 0.4);
 }
 
 .theory-breadcrumb-sep {
@@ -5588,20 +5637,32 @@ footer {
 
 .theory-unit-card {
     background: var(--bg-card);
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-glow);
     border-left: 4px solid var(--accent);
     border-radius: var(--radius-lg);
     padding: 20px 22px;
     cursor: pointer;
-    transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+    transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s, background 0.15s;
     position: relative;
     overflow: hidden;
+    box-shadow: var(--glow-sm);
+}
+
+.theory-unit-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--bg-card-glow);
+    pointer-events: none;
 }
 
 .theory-unit-card:hover {
     transform: translateY(-3px);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.35);
-    border-color: var(--accent-blue);
+    box-shadow: var(--glow-md), 0 6px 20px rgba(0,0,0,0.35);
+    border-color: var(--glow-cyan-border);
 }
 
 .theory-unit-card-header {
@@ -5645,9 +5706,10 @@ footer {
 
 .theory-unit-card-progress-bar {
     height: 100%;
-    background: var(--tonic);
+    background: linear-gradient(90deg, var(--tonic), var(--glow-cyan));
     border-radius: 2px;
     transition: width 0.3s ease;
+    box-shadow: 0 0 6px rgba(88, 166, 255, 0.3);
 }
 
 .theory-unit-card-progress-text {
@@ -5683,7 +5745,7 @@ footer {
 .theory-section-separator-line {
     flex: 1;
     height: 1px;
-    background: var(--border);
+    background: linear-gradient(90deg, transparent, var(--glow-cyan-border), transparent);
 }
 
 .theory-section-separator-label {
@@ -5693,6 +5755,7 @@ footer {
     letter-spacing: 0.08em;
     color: var(--text-muted);
     white-space: nowrap;
+    text-shadow: 0 0 8px rgba(88, 166, 255, 0.3);
 }
 
 /* Quick-access pill bar */
@@ -5720,9 +5783,10 @@ footer {
 }
 
 .theory-quick-pill:hover {
-    border-color: var(--accent-blue);
-    background: var(--bg-surface);
-    color: var(--accent-blue);
+    border-color: var(--glow-cyan-border);
+    background: var(--glow-cyan-muted);
+    color: var(--glow-cyan);
+    box-shadow: var(--glow-sm);
 }
 
 .theory-quick-pill-icon {
@@ -5752,20 +5816,22 @@ footer {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.65);
+    background: rgba(5, 15, 30, 0.7);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
 }
 
 .ref-quick-modal-content {
     position: relative;
     background: var(--bg-card);
-    border: 1px solid var(--border);
+    border: 1px solid var(--glow-cyan-border);
     border-radius: var(--radius-lg);
     padding: 24px;
     max-width: 700px;
     width: 92%;
     max-height: 80vh;
     overflow-y: auto;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+    box-shadow: var(--glow-lg), 0 12px 40px rgba(0, 0, 0, 0.5);
     z-index: 1;
 }
 
@@ -5784,7 +5850,8 @@ footer {
 }
 
 .ref-quick-modal-close:hover {
-    color: var(--accent);
+    color: var(--glow-cyan);
+    text-shadow: 0 0 8px rgba(88, 166, 255, 0.4);
 }
 
 #ref-quick-modal-body h3 {
@@ -5995,8 +6062,13 @@ footer {
 }
 
 .theory-lesson-card:hover {
-    border-color: var(--accent-blue);
+    border-color: var(--glow-cyan-border);
     background: var(--bg-surface);
+    box-shadow: var(--glow-sm);
+}
+
+.theory-lesson-card.completed {
+    border-left: 3px solid var(--tonic);
 }
 
 .theory-lesson-card-check {
@@ -6052,8 +6124,10 @@ footer {
 }
 
 .theory-lesson-nav-btns .btn:hover {
-    border-color: var(--accent-blue);
+    border-color: var(--glow-cyan-border);
     background: var(--bg-card);
+    color: var(--glow-cyan);
+    box-shadow: var(--glow-sm);
 }
 
 .theory-lesson-nav-btns .btn:disabled {
@@ -6063,7 +6137,7 @@ footer {
 
 /* Citation blockquote */
 .theory-citation {
-    border-left: 3px solid var(--accent-blue);
+    border-left: 3px solid var(--glow-cyan);
     background: rgba(88, 166, 255, 0.06);
     padding: 14px 18px;
     margin: 14px 0;
@@ -6071,6 +6145,7 @@ footer {
     font-style: italic;
     line-height: 1.6;
     color: var(--text);
+    box-shadow: inset 0 0 12px rgba(88, 166, 255, 0.08);
 }
 
 .theory-citation p {
