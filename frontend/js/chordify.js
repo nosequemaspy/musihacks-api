@@ -231,7 +231,7 @@ const Chordify = (() => {
         if (!chord) return '-';
         let name = escapeHtml(chord.chord.split('/')[0]);
         // Format type suffixes as superscript (order matters: longest first)
-        name = name.replace(/(maj7|m7|m|7|dim|aug|sus[24]|add9|6)$/i, '<sup>$1</sup>');
+        name = name.replace(/(dim7|m7b5|maj7|add9|sus[24]|m7|m6|m|7|6|dim|aug|5)$/i, '<sup>$1</sup>');
 
         // Determine bass note: either explicit bass or first note
         let bassNote = chord.bass;
@@ -583,7 +583,7 @@ const Chordify = (() => {
             // Build chord symbol
             let symbolHtml = escapeHtml(chord.chord.split('/')[0]);
             // Format type suffixes as superscript (order matters: longest first)
-            symbolHtml = symbolHtml.replace(/(maj7|m7|m|7|dim|aug|sus[24]|add9|6)$/i, '<sup>$1</sup>');
+            symbolHtml = symbolHtml.replace(/(dim7|m7b5|maj7|add9|sus[24]|m7|m6|m|7|6|dim|aug|5)$/i, '<sup>$1</sup>');
 
             if (chord.inversion > 0 && chord.bass) {
                 symbolHtml += `<span style="font-size:0.7em;opacity:0.6">/${escapeHtml(chord.bass)}</span>`;

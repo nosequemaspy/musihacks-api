@@ -6,12 +6,9 @@ cosine similarity for chord detection.
 
 import os
 import re
-import shutil
 import subprocess
-import tempfile
 import time
 import traceback
-from collections import Counter
 
 import numpy as np
 
@@ -19,43 +16,65 @@ TEMP_DIR = "/tmp/musihacks_chordify"
 MAX_DURATION = 600  # 10 minutes
 SAMPLE_RATE = 22050
 HOP_LENGTH = 512
-MIN_CHORD_DURATION = 0.6  # Reducido para capturar acordes más rápidos y adornos
-APPROACH_NOTE_DURATION = 0.3  # Duración típica de approach notes
-CONFIDENCE_THRESHOLD = 0.55  # Reducido ligeramente para capturar más acordes
+CONFIDENCE_THRESHOLD = 0.55
 MAX_CHORD_BARS = 8  # Max bars before forcing a new chord segment
+
+# ─── Per-beat analysis and merging parameters ──────────────────────
+MIN_PERSISTENCE_BEATS = 2    # Beats minimos para validar un cambio de acorde
+CHANGE_SIGNIFICANCE_THRESHOLD = 0.08  # Diferencia minima de similitud coseno para cambio real
+CHROMA_SIMILARITY_THRESHOLD = 0.92    # Similitud coseno entre chromas para considerarlos iguales
+DIATONIC_BONUS = 0.03        # Bonus para acordes con raiz diatonica
+PRIMARY_DIATONIC_BONUS = 0.05  # Bonus para acordes I, IV, V, vi
 
 # ─── Chord templates for cosine-similarity detection ───────────────
 
 NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
 
-# Chord types as semitone intervals from root
+# Chord types as semitone intervals from root (15 types)
 AUDIO_CHORD_TYPES = {
     'major':      [0, 4, 7],
     'minor':      [0, 3, 7],
+    'sus2':       [0, 2, 7],
+    'sus4':       [0, 5, 7],
+    '5':          [0, 7],           # power chord
     'dominant7':  [0, 4, 7, 10],
     'minor7':     [0, 3, 7, 10],
     'major7':     [0, 4, 7, 11],
     'diminished': [0, 3, 6],
     'augmented':  [0, 4, 8],
+    'dim7':       [0, 3, 6, 9],
+    'half_dim7':  [0, 3, 6, 10],
+    'add9':       [0, 2, 4, 7],
+    '6':          [0, 4, 7, 9],
+    'm6':         [0, 3, 7, 9],
 }
 
-# Simplicity bonus: triads get a small boost to break ties, but not enough
-# to override a clearly better 7th chord match (e.g. Am7, Fmaj7, E7)
-_TRIAD_TYPES = {'major', 'minor'}
-SIMPLICITY_BONUS = 0.02
-
-# Beats per bar for bar-level grouping
-BEATS_PER_BAR = 4
+# Tiered simplicity bonus: simpler chords get a small boost to break ties
+_SIMPLICITY_BONUS = {
+    'major': 0.04, 'minor': 0.04,                          # Tier 1: triads
+    'sus2': 0.02, 'sus4': 0.02, '5': 0.02,                 # Tier 2: simple variants
+    'dominant7': 0.01, 'minor7': 0.01, 'major7': 0.01,     # Tier 3: 7ths
+    'diminished': 0.0, 'augmented': 0.0, 'dim7': 0.0,      # Tier 4: complex
+    'half_dim7': 0.0, 'add9': 0.0, '6': 0.0, 'm6': 0.0,
+}
 
 # Display symbols per chord type
 AUDIO_CHORD_SYMBOLS = {
     'major':      '',
     'minor':      'm',
+    'sus2':       'sus2',
+    'sus4':       'sus4',
+    '5':          '5',
     'dominant7':  '7',
     'minor7':     'm7',
     'major7':     'maj7',
     'diminished': 'dim',
     'augmented':  'aug',
+    'dim7':       'dim7',
+    'half_dim7':  'm7b5',
+    'add9':       'add9',
+    '6':          '6',
+    'm6':         'm6',
 }
 
 # Pre-compute normalized chroma template vectors: (root, type) -> unit vector
@@ -338,52 +357,54 @@ def analyze_audio(filepath: str, progress_cb=None) -> dict:
     _check_timeout("chroma")
 
     if progress_cb:
-        progress_cb(55, "Detectando acordes por compás...")
+        progress_cb(55, "Detectando acordes por beat...")
 
-    # Detect chords per bar (group BEATS_PER_BAR beats into one analysis)
-    raw_chords = []
+    # Detect chords per individual beat (not per bar)
+    beat_chords = []
+    beat_chromas = []  # Store chroma vectors for significance testing
     total_beats = len(beat_times)
-    total_bars = max(1, (total_beats + BEATS_PER_BAR - 1) // BEATS_PER_BAR)
 
-    for bar in range(total_bars):
-        first_beat = bar * BEATS_PER_BAR
-        last_beat = min(first_beat + BEATS_PER_BAR - 1, total_beats - 1)
-
-        if first_beat >= total_beats:
-            break
-
-        start_frame = beat_frames[first_beat]
-        end_frame = beat_frames[last_beat + 1] if last_beat + 1 < total_beats else chroma.shape[1]
+    for beat_idx in range(total_beats):
+        start_frame = beat_frames[beat_idx]
+        end_frame = beat_frames[beat_idx + 1] if beat_idx + 1 < total_beats else chroma.shape[1]
 
         if end_frame <= start_frame:
             continue
 
-        bar_start = float(beat_times[first_beat])
-        bar_end = float(beat_times[last_beat + 1]) if last_beat + 1 < total_beats else float(len(y) / sr)
+        beat_start = float(beat_times[beat_idx])
+        beat_end = float(beat_times[beat_idx + 1]) if beat_idx + 1 < total_beats else float(len(y) / sr)
 
         # Per-frame normalization: each frame votes equally regardless of volume
-        # This prevents loud vocal sections from dominating the chord detection
-        chroma_bar = chroma[:, start_frame:end_frame].copy()
-        frame_norms = np.linalg.norm(chroma_bar, axis=0, keepdims=True)
+        chroma_beat = chroma[:, start_frame:end_frame].copy()
+        frame_norms = np.linalg.norm(chroma_beat, axis=0, keepdims=True)
         frame_norms[frame_norms < 1e-6] = 1.0
-        chroma_bar /= frame_norms
-        chroma_avg = np.mean(chroma_bar, axis=1)
+        chroma_beat /= frame_norms
+        chroma_avg = np.mean(chroma_beat, axis=1)
 
-        bass_bar = bass_chroma[:, start_frame:end_frame].copy()
-        bass_norms = np.linalg.norm(bass_bar, axis=0, keepdims=True)
+        bass_beat = bass_chroma[:, start_frame:end_frame].copy()
+        bass_norms = np.linalg.norm(bass_beat, axis=0, keepdims=True)
         bass_norms[bass_norms < 1e-6] = 1.0
-        bass_bar /= bass_norms
-        bass_avg = np.mean(bass_bar, axis=1)
+        bass_beat /= bass_norms
+        bass_avg = np.mean(bass_beat, axis=1)
+
         chord_info = _detect_chord_from_chroma(chroma_avg, bass_avg)
-        raw_chords.append({
-            "time": round(bar_start, 2),
-            "duration": round(bar_end - bar_start, 2),
+        beat_chords.append({
+            "time": round(beat_start, 2),
+            "duration": round(beat_end - beat_start, 2),
+            "beat_idx": beat_idx,
             **chord_info,
         })
+        beat_chromas.append(chroma_avg)
 
-        if progress_cb and bar % max(1, total_bars // 10) == 0:
-            pct = 55 + int((bar / total_bars) * 25)
-            progress_cb(pct, f"Analizando acordes ({bar}/{total_bars})...")
+        if progress_cb and beat_idx % max(1, total_beats // 10) == 0:
+            pct = 55 + int((beat_idx / total_beats) * 20)
+            progress_cb(pct, f"Analizando acordes ({beat_idx}/{total_beats})...")
+
+    if progress_cb:
+        progress_cb(76, "Fusionando beats en segmentos...")
+
+    # Merge beats into segments with persistence and significance filters
+    raw_chords = _merge_beats_to_segments(beat_chords, beat_chromas)
 
     if progress_cb:
         progress_cb(82, "Detectando tonalidad...")
@@ -391,10 +412,23 @@ def analyze_audio(filepath: str, progress_cb=None) -> dict:
     key_info = _detect_key_from_chroma(chroma)
 
     if progress_cb:
-        progress_cb(85, "Optimizando timeline...")
+        progress_cb(84, "Aplicando scoring diatónico...")
 
-    # Smooth timeline (majority vote + merge + orphan removal)
-    smoothed = _smooth_timeline(raw_chords)
+    # Re-evaluate non-diatonic chords using detected key
+    raw_chords = _apply_diatonic_scoring(
+        raw_chords, key_info, chroma, bass_chroma, beat_frames, beat_times,
+        total_beats, len(y), sr
+    )
+
+    if progress_cb:
+        progress_cb(87, "Optimizando timeline...")
+
+    # Adaptive parameters based on tempo
+    min_chord_dur = 60.0 / tempo * 1.0   # 1 beat
+    approach_note_dur = 60.0 / tempo * 0.5  # half beat
+
+    # Smooth timeline (merge + orphan removal + adaptive duration filter)
+    smoothed = _smooth_timeline(raw_chords, min_chord_dur, approach_note_dur)
 
     return {
         "tempo": round(tempo, 1),
@@ -408,8 +442,7 @@ def analyze_audio(filepath: str, progress_cb=None) -> dict:
 def _detect_chord_from_chroma(chroma_avg: np.ndarray, bass_avg: np.ndarray) -> dict:
     """
     Detect chord from chroma vector using cosine similarity against
-    pre-computed templates. Restricted to 7 chord types (major, minor,
-    dom7, min7, maj7, dim, aug) to avoid overly complex labels.
+    pre-computed templates (15 chord types with tiered simplicity bonus).
     """
     empty = {"chord": "-", "notes": [], "bass": None, "inversion": 0, "confidence": 0}
 
@@ -421,8 +454,7 @@ def _detect_chord_from_chroma(chroma_avg: np.ndarray, bass_avg: np.ndarray) -> d
     # Normalize observed chroma to unit vector
     chroma_unit = chroma_avg / norm
 
-    # Find best matching template by cosine similarity
-    # Triads get a simplicity bonus so they win over 7ths when similarity is close
+    # Find best matching template by cosine similarity (tiered simplicity bonus)
     best_score = -1.0
     best_sim = -1.0
     best_root = 0
@@ -430,7 +462,7 @@ def _detect_chord_from_chroma(chroma_avg: np.ndarray, bass_avg: np.ndarray) -> d
 
     for (root_idx, ctype), template in _TEMPLATES.items():
         sim = float(np.dot(chroma_unit, template))
-        score = sim + (SIMPLICITY_BONUS if ctype in _TRIAD_TYPES else 0)
+        score = sim + _SIMPLICITY_BONUS.get(ctype, 0.0)
         if score > best_score:
             best_score = score
             best_sim = sim
@@ -470,67 +502,337 @@ def _detect_chord_from_chroma(chroma_avg: np.ndarray, bass_avg: np.ndarray) -> d
     }
 
 
-def _majority_vote_smooth(raw_chords: list, window: int = 3) -> list:
+def _merge_beats_to_segments(beat_chords: list, beat_chromas: list) -> list:
     """
-    Sliding-window majority vote with window=3: only fix single-bar
-    glitches without destroying real chord progressions.
+    Merge per-beat chord detections into segments using:
+    1. Persistence filter: a chord change must last >= MIN_PERSISTENCE_BEATS
+    2. Significance filter: adjacent chromas must differ enough (cosine sim < threshold)
+    3. Consecutive merge: identical adjacent chords become one segment
     """
-    if len(raw_chords) < window:
-        return raw_chords
+    if not beat_chords:
+        return []
 
-    smoothed = []
-    half = window // 2
+    n = len(beat_chords)
 
-    for i in range(len(raw_chords)):
-        lo = max(0, i - half)
-        hi = min(len(raw_chords), i + half + 1)
-        labels = [raw_chords[j]["chord"] for j in range(lo, hi)]
-        most_common = Counter(labels).most_common(1)[0][0]
+    # Step 1: Apply persistence filter - mark real changes
+    # A change is "real" only if the new chord persists for >= MIN_PERSISTENCE_BEATS
+    filtered_labels = [beat_chords[0]["chord"]] * n
+    current_chord = beat_chords[0]["chord"]
+    run_start = 0
 
-        entry = dict(raw_chords[i])
-        # Only override if the original differs AND there is a clear majority
-        count = labels.count(most_common)
-        if most_common != "-" and count > 1 and entry["chord"] != most_common:
-            for j in range(lo, hi):
-                if raw_chords[j]["chord"] == most_common:
-                    entry["chord"] = most_common
-                    entry["notes"] = raw_chords[j]["notes"]
-                    entry["bass"] = raw_chords[j]["bass"]
-                    entry["inversion"] = raw_chords[j]["inversion"]
-                    entry["confidence"] = raw_chords[j]["confidence"]
+    for i in range(1, n):
+        if beat_chords[i]["chord"] != current_chord:
+            # Look ahead: how many consecutive beats have this new chord?
+            run_len = 1
+            for j in range(i + 1, n):
+                if beat_chords[j]["chord"] == beat_chords[i]["chord"]:
+                    run_len += 1
+                else:
                     break
-        smoothed.append(entry)
 
-    return smoothed
+            if run_len >= MIN_PERSISTENCE_BEATS:
+                # Also check significance: is the chroma actually different?
+                if i < len(beat_chromas) and run_start < len(beat_chromas):
+                    norm_a = np.linalg.norm(beat_chromas[run_start])
+                    norm_b = np.linalg.norm(beat_chromas[i])
+                    if norm_a > 1e-6 and norm_b > 1e-6:
+                        cos_sim = float(np.dot(beat_chromas[run_start], beat_chromas[i]) / (norm_a * norm_b))
+                        if cos_sim > CHROMA_SIMILARITY_THRESHOLD:
+                            # Chromas too similar — not a real change
+                            filtered_labels[i] = current_chord
+                            continue
+
+                # Real change
+                current_chord = beat_chords[i]["chord"]
+                run_start = i
+                filtered_labels[i] = current_chord
+            else:
+                # Not persistent enough — keep previous chord
+                filtered_labels[i] = current_chord
+        else:
+            filtered_labels[i] = current_chord
+
+    # Step 2: Build segments from filtered labels
+    segments = []
+    seg_start = 0
+
+    for i in range(1, n):
+        if filtered_labels[i] != filtered_labels[seg_start]:
+            # Find the best beat_chord entry for this segment's chord info
+            best_entry = None
+            best_conf = -1
+            for j in range(seg_start, i):
+                if beat_chords[j]["chord"] == filtered_labels[seg_start]:
+                    if beat_chords[j].get("confidence", 0) > best_conf:
+                        best_conf = beat_chords[j].get("confidence", 0)
+                        best_entry = beat_chords[j]
+
+            if best_entry is None:
+                best_entry = beat_chords[seg_start]
+
+            seg_end_time = beat_chords[i]["time"]
+            segments.append({
+                "time": round(beat_chords[seg_start]["time"], 2),
+                "duration": round(seg_end_time - beat_chords[seg_start]["time"], 2),
+                "chord": filtered_labels[seg_start],
+                "notes": best_entry.get("notes", []),
+                "bass": best_entry.get("bass"),
+                "inversion": best_entry.get("inversion", 0),
+                "confidence": best_entry.get("confidence", 0),
+            })
+            seg_start = i
+
+    # Last segment
+    if seg_start < n:
+        best_entry = None
+        best_conf = -1
+        for j in range(seg_start, n):
+            if beat_chords[j]["chord"] == filtered_labels[seg_start]:
+                if beat_chords[j].get("confidence", 0) > best_conf:
+                    best_conf = beat_chords[j].get("confidence", 0)
+                    best_entry = beat_chords[j]
+        if best_entry is None:
+            best_entry = beat_chords[seg_start]
+
+        last_beat = beat_chords[n - 1]
+        seg_end_time = last_beat["time"] + last_beat["duration"]
+        segments.append({
+            "time": round(beat_chords[seg_start]["time"], 2),
+            "duration": round(seg_end_time - beat_chords[seg_start]["time"], 2),
+            "chord": filtered_labels[seg_start],
+            "notes": best_entry.get("notes", []),
+            "bass": best_entry.get("bass"),
+            "inversion": best_entry.get("inversion", 0),
+            "confidence": best_entry.get("confidence", 0),
+        })
+
+    return segments
 
 
-def _smooth_timeline(raw_chords: list) -> list:
+# ─── Enharmonic note name to pitch class mapping ──────────────────
+_NOTE_TO_PC = {
+    'C': 0, 'C#': 1, 'Db': 1, 'D': 2, 'D#': 3, 'Eb': 3,
+    'E': 4, 'Fb': 4, 'E#': 5, 'F': 5, 'F#': 6, 'Gb': 6,
+    'G': 7, 'G#': 8, 'Ab': 8, 'A': 9, 'A#': 10, 'Bb': 10,
+    'B': 11, 'Cb': 11, 'B#': 0,
+}
+
+
+def _parse_root_pc(chord_symbol: str) -> int | None:
     """
-    Pipeline: majority-vote (window=3) → merge consecutive identical →
-    remove orphan chords (single short chords between longer ones) →
-    filter low confidence.
+    Extract pitch class of the root from a chord symbol.
+    E.g. "C#m7" -> 1, "Bbdim" -> 10, "G" -> 7
+    Handles enharmonics (Bb, Eb, etc).
+    """
+    if not chord_symbol or chord_symbol == '-':
+        return None
+
+    # Strip slash bass note
+    base = chord_symbol.split('/')[0]
+    if not base or not base[0].isalpha():
+        return None
+
+    # Extract root: first letter + optional # or b
+    root = base[0].upper()
+    if len(base) > 1 and base[1] in ('#', 'b'):
+        root += base[1]
+
+    return _NOTE_TO_PC.get(root)
+
+
+def _build_diatonic_set(key_name: str, mode: str) -> tuple:
+    """
+    Build the set of diatonic pitch classes for a key, plus the set of
+    primary degree roots (I, IV, V, vi for major; i, iv, v, VI for minor).
+    Returns (all_diatonic_pcs: set, primary_pcs: set).
+    """
+    root_pc = _NOTE_TO_PC.get(key_name.replace('m', ''))
+    if root_pc is None:
+        # Try stripping trailing 'm' for minor keys like "Cm" -> "C"
+        clean = key_name
+        if clean.endswith('m') and len(clean) > 1:
+            clean = clean[:-1]
+        root_pc = _NOTE_TO_PC.get(clean)
+    if root_pc is None:
+        return set(), set()
+
+    if mode == 'major':
+        # Major scale intervals: W W H W W W H
+        scale_intervals = [0, 2, 4, 5, 7, 9, 11]
+        # Primary degrees: I(0), IV(5), V(7), vi(9)
+        primary_intervals = [0, 5, 7, 9]
+    else:
+        # Natural minor scale intervals: W H W W H W W
+        scale_intervals = [0, 2, 3, 5, 7, 8, 10]
+        # Primary degrees: i(0), iv(5), v(7), VI(8)
+        primary_intervals = [0, 5, 7, 8]
+
+    all_pcs = {(root_pc + iv) % 12 for iv in scale_intervals}
+    primary_pcs = {(root_pc + iv) % 12 for iv in primary_intervals}
+
+    return all_pcs, primary_pcs
+
+
+def _apply_diatonic_scoring(
+    segments: list, key_info: dict,
+    chroma: np.ndarray, bass_chroma: np.ndarray,
+    beat_frames: np.ndarray, beat_times: np.ndarray,
+    total_beats: int, audio_len: int, sr: int,
+) -> list:
+    """
+    Re-evaluate chords that are NOT diatonic to the detected key.
+    If a diatonic chord has competitive similarity, prefer it.
+    Only applies when key confidence >= 30%.
+    """
+    if key_info["confidence"] < 30:
+        return segments
+
+    diatonic_pcs, primary_pcs = _build_diatonic_set(key_info["key"], key_info["mode"])
+    if not diatonic_pcs:
+        return segments
+
+    result = []
+    for seg in segments:
+        root_pc = _parse_root_pc(seg["chord"])
+
+        # If already diatonic or undetectable, keep as-is
+        if root_pc is None or root_pc in diatonic_pcs:
+            result.append(seg)
+            continue
+
+        # Non-diatonic chord — re-run template matching with diatonic bonuses
+        # Find approximate frame range for this segment
+        seg_start_time = seg["time"]
+        seg_end_time = seg["time"] + seg["duration"]
+
+        # Find beat frames covering this segment
+        start_frame = None
+        end_frame = None
+        for bi in range(total_beats):
+            bt = float(beat_times[bi])
+            if bt >= seg_start_time and start_frame is None:
+                start_frame = int(beat_frames[bi])
+            if bt >= seg_end_time:
+                end_frame = int(beat_frames[bi])
+                break
+        if start_frame is None:
+            start_frame = 0
+        if end_frame is None:
+            end_frame = chroma.shape[1]
+        if end_frame <= start_frame:
+            result.append(seg)
+            continue
+
+        # Compute chroma for this segment
+        chroma_seg = chroma[:, start_frame:end_frame].copy()
+        frame_norms = np.linalg.norm(chroma_seg, axis=0, keepdims=True)
+        frame_norms[frame_norms < 1e-6] = 1.0
+        chroma_seg /= frame_norms
+        chroma_avg = np.mean(chroma_seg, axis=1)
+
+        norm = np.linalg.norm(chroma_avg)
+        if norm < 0.01:
+            result.append(seg)
+            continue
+        chroma_unit = chroma_avg / norm
+
+        # Re-run matching with diatonic bonuses
+        best_score = -1.0
+        best_sim = -1.0
+        best_root = 0
+        best_type = 'major'
+
+        for (root_idx, ctype), template in _TEMPLATES.items():
+            sim = float(np.dot(chroma_unit, template))
+            score = sim + _SIMPLICITY_BONUS.get(ctype, 0.0)
+
+            # Diatonic bonuses
+            if root_idx in primary_pcs:
+                score += PRIMARY_DIATONIC_BONUS
+            elif root_idx in diatonic_pcs:
+                score += DIATONIC_BONUS
+
+            if score > best_score:
+                best_score = score
+                best_sim = sim
+                best_root = root_idx
+                best_type = ctype
+
+        # Only override if the diatonic candidate is reasonably close
+        # (don't override if original had much better raw similarity)
+        original_conf = seg.get("confidence", 0)
+        if best_sim >= original_conf - 0.08:
+            root_name = NOTE_NAMES[best_root]
+            symbol = root_name + AUDIO_CHORD_SYMBOLS[best_type]
+            intervals = AUDIO_CHORD_TYPES[best_type]
+            notes = [NOTE_NAMES[(best_root + iv) % 12] for iv in intervals]
+
+            # Recompute bass
+            bass_seg = bass_chroma[:, start_frame:end_frame].copy()
+            bn = np.linalg.norm(bass_seg, axis=0, keepdims=True)
+            bn[bn < 1e-6] = 1.0
+            bass_seg /= bn
+            bass_avg = np.mean(bass_seg, axis=1)
+            bass_norm = bass_avg / (np.max(bass_avg) + 1e-8)
+            bass_pc = int(np.argmax(bass_norm)) if np.max(bass_norm) > 0.65 else None
+
+            bass_note = None
+            inversion = 0
+            if bass_pc is not None and bass_pc != best_root and best_sim >= 0.75:
+                chord_pcs = [(best_root + iv) % 12 for iv in intervals]
+                if bass_pc in chord_pcs:
+                    inversion = chord_pcs.index(bass_pc)
+                    bass_note = NOTE_NAMES[bass_pc]
+
+            if bass_note and inversion > 0:
+                symbol = f"{symbol}/{bass_note}"
+
+            result.append({
+                "time": seg["time"],
+                "duration": seg["duration"],
+                "chord": symbol,
+                "notes": notes,
+                "bass": bass_note,
+                "inversion": inversion,
+                "confidence": round(float(best_sim), 2),
+            })
+        else:
+            result.append(seg)
+
+    return result
+
+
+def _smooth_timeline(raw_chords: list, min_chord_dur: float, approach_note_dur: float) -> list:
+    """
+    Improved smoothing pipeline:
+    1. Merge consecutive identical chords (with max duration cap)
+    2. Remove orphans using harmonic distance analysis
+    3. Adaptive minimum duration filter (tempo-based)
+    4. Filter low confidence
     """
     if not raw_chords:
         return []
 
-    # Step 1: gentle majority vote (only fix single-bar glitches)
-    voted = _majority_vote_smooth(raw_chords)
-
-    # Step 2: merge consecutive identical chords (with max duration cap)
-    # Estimate bar duration for capping
-    avg_seg_dur = np.mean([c["duration"] for c in voted if c["duration"] > 0]) if voted else 1.0
-    max_merge_dur = avg_seg_dur * MAX_CHORD_BARS  # Don't merge beyond MAX_CHORD_BARS segments
+    # Step 1: merge consecutive identical chords (with max duration cap)
+    avg_seg_dur = np.mean([c["duration"] for c in raw_chords if c["duration"] > 0]) if raw_chords else 1.0
+    max_merge_dur = avg_seg_dur * MAX_CHORD_BARS
 
     merged = []
-    current = dict(voted[0])
+    current = dict(raw_chords[0])
 
-    for i in range(1, len(voted)):
-        chord = voted[i]
+    for i in range(1, len(raw_chords)):
+        chord = raw_chords[i]
         current_dur = round(chord["time"] + chord["duration"] - current["time"], 2)
 
         if (chord["chord"] == current["chord"] and chord["chord"] != "-"
                 and current_dur <= max_merge_dur):
             current["duration"] = current_dur
+            # Keep the higher confidence entry's details
+            if chord.get("confidence", 0) > current.get("confidence", 0):
+                current["notes"] = chord["notes"]
+                current["bass"] = chord["bass"]
+                current["inversion"] = chord["inversion"]
+                current["confidence"] = chord["confidence"]
         else:
             if current["chord"] != "-":
                 merged.append(current)
@@ -544,52 +846,58 @@ def _smooth_timeline(raw_chords: list) -> list:
     if current["chord"] != "-":
         merged.append(current)
 
-    # Step 3: remove orphan chords — pero preservar bajadas cromáticas y approach notes
-    # Solo eliminar si es MUY corto (< APPROACH_NOTE_DURATION) y no forma parte de patrón cromático
+    # Step 2: remove orphans with harmonic distance analysis
+    # Preserve: chromatic patterns, same-root-different-quality, significant changes
+    # Remove: very short chords without harmonic context
     if len(merged) > 2:
         consolidated = [merged[0]]
         for i in range(1, len(merged) - 1):
             c = merged[i]
-            prev = merged[i - 1]
+            prev_chord = consolidated[-1]
             nxt = merged[i + 1]
 
-            # Detectar si es parte de patrón cromático (acordes con roots adyacentes)
-            is_chromatic_pattern = False
-            try:
-                from .theory.notes import note_to_pc
-                prev_root = prev["chord"].split('/')[0].rstrip('0123456789').replace('maj', '').replace('m', '').replace('dim', '').replace('aug', '').replace('sus', '')[:2]
-                curr_root = c["chord"].split('/')[0].rstrip('0123456789').replace('maj', '').replace('m', '').replace('dim', '').replace('aug', '').replace('sus', '')[:2]
-                next_root = nxt["chord"].split('/')[0].rstrip('0123456789').replace('maj', '').replace('m', '').replace('dim', '').replace('aug', '').replace('sus', '')[:2]
+            # If duration is reasonable, always keep
+            if c["duration"] >= min_chord_dur:
+                consolidated.append(c)
+                continue
 
-                prev_pc = note_to_pc(prev_root) if len(prev_root) > 0 and prev_root[0].isalpha() else None
-                curr_pc = note_to_pc(curr_root) if len(curr_root) > 0 and curr_root[0].isalpha() else None
-                next_pc = note_to_pc(next_root) if len(next_root) > 0 and next_root[0].isalpha() else None
+            # Short chord — check if it's musically meaningful
+            keep = False
 
-                # Patrón cromático: movimiento de semitono entre 3 acordes consecutivos
-                if prev_pc is not None and curr_pc is not None and next_pc is not None:
-                    diff1 = abs((curr_pc - prev_pc) % 12)
-                    diff2 = abs((next_pc - curr_pc) % 12)
-                    # Semitono (1 o 11 en módulo 12) o tono (2 o 10)
-                    if (diff1 in (1, 2, 10, 11)) and (diff2 in (1, 2, 10, 11)):
-                        is_chromatic_pattern = True
-            except:
-                pass
+            prev_pc = _parse_root_pc(prev_chord["chord"])
+            curr_pc = _parse_root_pc(c["chord"])
+            next_pc = _parse_root_pc(nxt["chord"])
 
-            # Solo eliminar si es MUY corto Y NO es patrón cromático
-            if c["duration"] < APPROACH_NOTE_DURATION and not is_chromatic_pattern:
-                # Absorb into the previous chord (extend its duration)
+            if prev_pc is not None and curr_pc is not None and next_pc is not None:
+                # Chromatic pattern: stepwise root motion (semitone or tone)
+                diff1 = min((curr_pc - prev_pc) % 12, (prev_pc - curr_pc) % 12)
+                diff2 = min((next_pc - curr_pc) % 12, (curr_pc - next_pc) % 12)
+                if diff1 <= 2 and diff2 <= 2:
+                    keep = True
+
+                # Same root, different quality (e.g., C -> Cm -> C7) — keep
+                if curr_pc == prev_pc or curr_pc == next_pc:
+                    keep = True
+
+                # Common harmonic motion (4th/5th) — keep
+                if diff1 in (5, 7) or diff2 in (5, 7):
+                    keep = True
+
+            # Very short and no harmonic justification — absorb into previous
+            if not keep and c["duration"] < approach_note_dur:
                 consolidated[-1]["duration"] = round(
-                    merged[i + 1]["time"] - consolidated[-1]["time"], 2
+                    nxt["time"] - consolidated[-1]["time"], 2
                 )
             else:
                 consolidated.append(c)
+
         consolidated.append(merged[-1])
         merged = consolidated
 
-    # Step 4: filter low confidence
+    # Step 3: filter low confidence
     merged = [c for c in merged if c.get("confidence", 0) >= CONFIDENCE_THRESHOLD]
 
-    # Step 5: recalculate durations to fill gaps after filtering
+    # Step 4: recalculate durations to fill gaps after filtering
     for i in range(len(merged) - 1):
         gap_end = merged[i + 1]["time"]
         merged[i]["duration"] = round(gap_end - merged[i]["time"], 2)
