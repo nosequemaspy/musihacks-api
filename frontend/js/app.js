@@ -379,7 +379,21 @@
     // Home shortcut buttons + back buttons
     document.querySelectorAll('[data-goto]').forEach(btn => {
         btn.addEventListener('click', () => {
-            switchTab(btn.dataset.goto);
+            // Theory back button has dynamic behavior managed by Theory module
+            if (btn.id === 'theory-back-btn') {
+                if (typeof Theory !== 'undefined') {
+                    const view = Theory.getCurrentView();
+                    if (view === 'lesson') {
+                        const unit = Theory.getCurrentUnit();
+                        if (unit) { Theory.showUnit(unit); return; }
+                    } else if (view === 'unit') {
+                        Theory.showDashboard();
+                        return;
+                    }
+                }
+            }
+            const goto = btn.getAttribute('data-goto');
+            if (goto) switchTab(goto);
         });
     });
 
@@ -2804,7 +2818,8 @@
         try {
             const progress = JSON.parse(localStorage.getItem('musihacks_theory_progress') || '[]');
             const completed = Array.isArray(progress) ? progress.length : Object.values(progress).filter(v => v === true).length;
-            const total = (typeof Theory !== 'undefined' && Theory.lessons) ? Theory.lessons.length : 22;
+            const total = (typeof Theory !== 'undefined' && Theory.lessons) ? Theory.lessons.length : 24;
+            const unitCount = (typeof Theory !== 'undefined' && Theory.units) ? Theory.units.length : 8;
             const el = document.getElementById('homeTheoryProgress');
             if (el) el.textContent = `${completed} / ${total}`;
         } catch (e) {}

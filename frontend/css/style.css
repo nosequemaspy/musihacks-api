@@ -5541,3 +5541,270 @@ footer {
     color: var(--text-dim);
     line-height: 1.4;
 }
+
+/* === Theory Course: Dashboard, Units, Breadcrumb === */
+
+.theory-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 0;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+.theory-breadcrumb-link {
+    color: var(--accent-blue);
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-size: 0.85rem;
+    padding: 0;
+    text-decoration: none;
+}
+
+.theory-breadcrumb-link:hover {
+    color: var(--accent-light);
+    text-decoration: underline;
+}
+
+.theory-breadcrumb-sep {
+    color: var(--text-dim);
+    font-size: 0.8rem;
+}
+
+.theory-breadcrumb-current {
+    color: var(--text);
+    font-weight: 600;
+}
+
+.theory-dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.theory-unit-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: var(--radius-lg);
+    padding: 20px 22px;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+    position: relative;
+    overflow: hidden;
+}
+
+.theory-unit-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+    border-color: var(--accent-blue);
+}
+
+.theory-unit-card-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 10px;
+}
+
+.theory-unit-card-icon {
+    font-size: 1.8rem;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.theory-unit-card-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.theory-unit-card-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 2px;
+}
+
+.theory-unit-card-subtitle {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+.theory-unit-card-progress {
+    height: 4px;
+    background: var(--bg-surface);
+    border-radius: 2px;
+    margin-top: 14px;
+    overflow: hidden;
+}
+
+.theory-unit-card-progress-bar {
+    height: 100%;
+    background: var(--tonic);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+.theory-unit-card-progress-text {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    margin-top: 4px;
+    text-align: right;
+}
+
+/* Unit color variants */
+.theory-unit-card[data-color="red"]    { border-left-color: var(--accent); }
+.theory-unit-card[data-color="blue"]   { border-left-color: var(--accent-blue); }
+.theory-unit-card[data-color="green"]  { border-left-color: var(--tonic); }
+.theory-unit-card[data-color="yellow"] { border-left-color: var(--subdominant); }
+.theory-unit-card[data-color="purple"] { border-left-color: #a78bfa; }
+.theory-unit-card[data-color="orange"] { border-left-color: #f97316; }
+.theory-unit-card[data-color="teal"]   { border-left-color: #2dd4bf; }
+.theory-unit-card[data-color="pink"]   { border-left-color: #f472b6; }
+
+/* Lesson cards within a unit view */
+.theory-lesson-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.12s;
+    margin-bottom: 8px;
+}
+
+.theory-lesson-card:hover {
+    border-color: var(--accent-blue);
+    background: var(--bg-surface);
+}
+
+.theory-lesson-card-check {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    color: transparent;
+    transition: all 0.15s;
+}
+
+.theory-lesson-card.completed .theory-lesson-card-check {
+    background: var(--tonic);
+    border-color: var(--tonic);
+    color: white;
+}
+
+.theory-lesson-card-title {
+    font-size: 0.92rem;
+    color: var(--text);
+    font-weight: 500;
+}
+
+.theory-lesson-card.completed .theory-lesson-card-title {
+    color: var(--text-muted);
+}
+
+/* Prev/Next nav buttons at bottom of lesson */
+.theory-lesson-nav-btns {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 28px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+}
+
+.theory-lesson-nav-btns .btn {
+    padding: 10px 20px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-surface);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 0.88rem;
+    transition: all 0.12s;
+    flex: 0 1 auto;
+}
+
+.theory-lesson-nav-btns .btn:hover {
+    border-color: var(--accent-blue);
+    background: var(--bg-card);
+}
+
+.theory-lesson-nav-btns .btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+/* Citation blockquote */
+.theory-citation {
+    border-left: 3px solid var(--accent-blue);
+    background: rgba(88, 166, 255, 0.06);
+    padding: 14px 18px;
+    margin: 14px 0;
+    border-radius: 0 var(--radius) var(--radius) 0;
+    font-style: italic;
+    line-height: 1.6;
+    color: var(--text);
+}
+
+.theory-citation p {
+    margin: 0 0 6px;
+    font-style: italic;
+}
+
+.theory-citation-source {
+    display: block;
+    font-style: normal;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 6px;
+}
+
+/* Unit list header in unit view */
+.theory-unit-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 20px;
+}
+
+.theory-unit-header-icon {
+    font-size: 2.2rem;
+}
+
+.theory-unit-header-info h2 {
+    font-size: 1.3rem;
+    margin-bottom: 2px;
+}
+
+.theory-unit-header-info p {
+    color: var(--text-muted);
+    font-size: 0.88rem;
+}
+
+/* Responsive */
+@media (max-width: 700px) {
+    .theory-dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+    .theory-lesson-nav-btns {
+        flex-direction: column;
+    }
+    .theory-lesson-nav-btns .btn {
+        width: 100%;
+        text-align: center;
+    }
+}
