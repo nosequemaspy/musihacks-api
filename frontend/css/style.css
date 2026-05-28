@@ -5701,6 +5701,7 @@ footer {
     background: var(--bg-surface);
     border-radius: 2px;
     margin-top: 14px;
+    margin-bottom: 10px;
     overflow: hidden;
 }
 
@@ -5715,8 +5716,11 @@ footer {
 .theory-unit-card-progress-text {
     font-size: 0.75rem;
     color: var(--text-dim);
-    margin-top: 4px;
+    margin-top: 0;
     text-align: right;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 /* Unit color variants */
@@ -6194,5 +6198,784 @@ footer {
     .theory-lesson-nav-btns .btn {
         width: 100%;
         text-align: center;
+    }
+}
+
+/* ================================================================
+   THEORY COURSE REDESIGN - Hero, Tiles, Stepper, Animations
+   ================================================================ */
+
+/* --- View transition fade-in --- */
+@keyframes theory-fade-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.theory-view-enter {
+    animation: theory-fade-in 0.35s ease-out;
+}
+
+/* --- Dashboard Hero Banner --- */
+.theory-hero {
+    background: linear-gradient(135deg, rgba(88, 166, 255, 0.08) 0%, rgba(13, 17, 23, 0.95) 60%);
+    border: 1px solid var(--glow-cyan-border);
+    border-radius: var(--radius-lg);
+    padding: 28px 32px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--glow-md), 0 4px 24px rgba(0, 0, 0, 0.3);
+}
+
+.theory-hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(88, 166, 255, 0.06) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.theory-hero-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.theory-hero-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 4px;
+}
+
+.theory-hero-subtitle {
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+.theory-hero-pct {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--glow-cyan);
+    text-shadow: 0 0 20px rgba(88, 166, 255, 0.4);
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.theory-hero-pct small {
+    font-size: 0.7em;
+    font-weight: 600;
+    opacity: 0.7;
+}
+
+.theory-hero-progress {
+    height: 8px;
+    background: var(--bg-surface);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 6px;
+}
+
+.theory-hero-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-blue), var(--glow-cyan));
+    border-radius: 4px;
+    transition: width 0.5s ease;
+    box-shadow: 0 0 10px rgba(88, 166, 255, 0.4);
+}
+
+.theory-hero-progress-text {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+}
+
+.theory-hero-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.theory-hero-continue {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 22px;
+    border-radius: var(--radius);
+    border: 1px solid var(--glow-cyan-border);
+    background: rgba(88, 166, 255, 0.1);
+    color: var(--glow-cyan);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 0 12px rgba(88, 166, 255, 0.15);
+}
+
+.theory-hero-continue:hover {
+    background: rgba(88, 166, 255, 0.2);
+    box-shadow: 0 0 20px rgba(88, 166, 255, 0.3);
+    transform: translateY(-1px);
+}
+
+/* --- Hero Stats Row --- */
+.theory-hero-stats {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+
+.theory-hero-stat {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+}
+
+.theory-hero-stat-value {
+    font-weight: 700;
+    color: var(--text);
+}
+
+/* --- Unit Card Enhancements --- */
+.theory-unit-card-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 4px;
+}
+
+.theory-unit-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 3px 8px;
+    border-radius: 10px;
+}
+
+.theory-unit-badge.completed {
+    background: rgba(63, 185, 80, 0.15);
+    color: var(--tonic);
+}
+
+.theory-unit-badge.in-progress {
+    background: rgba(88, 166, 255, 0.15);
+    color: var(--accent-blue);
+}
+
+.theory-unit-badge.pending {
+    background: rgba(139, 148, 158, 0.1);
+    color: var(--text-dim);
+}
+
+.theory-unit-pct-badge {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 8px;
+    background: rgba(63, 185, 80, 0.15);
+    color: var(--tonic);
+}
+
+/* Color-specific hover glows for unit cards */
+.theory-unit-card[data-color="red"]:hover {
+    border-color: rgba(233, 69, 96, 0.5);
+    box-shadow: 0 0 15px rgba(233, 69, 96, 0.2), 0 6px 20px rgba(0,0,0,0.35);
+}
+.theory-unit-card[data-color="red"] .theory-unit-card-progress-bar {
+    background: linear-gradient(90deg, var(--accent), #ff6b81);
+}
+
+.theory-unit-card[data-color="blue"]:hover {
+    border-color: rgba(88, 166, 255, 0.5);
+    box-shadow: 0 0 15px rgba(88, 166, 255, 0.2), 0 6px 20px rgba(0,0,0,0.35);
+}
+.theory-unit-card[data-color="blue"] .theory-unit-card-progress-bar {
+    background: linear-gradient(90deg, var(--accent-blue), #79b8ff);
+}
+
+.theory-unit-card[data-color="green"]:hover {
+    border-color: rgba(63, 185, 80, 0.5);
+    box-shadow: 0 0 15px rgba(63, 185, 80, 0.2), 0 6px 20px rgba(0,0,0,0.35);
+}
+.theory-unit-card[data-color="green"] .theory-unit-card-progress-bar {
+    background: linear-gradient(90deg, var(--tonic), #56d364);
+}
+
+.theory-unit-card[data-color="yellow"]:hover {
+    border-color: rgba(210, 153, 34, 0.5);
+    box-shadow: 0 0 15px rgba(210, 153, 34, 0.2), 0 6px 20px rgba(0,0,0,0.35);
+}
+.theory-unit-card[data-color="yellow"] .theory-unit-card-progress-bar {
+    background: linear-gradient(90deg, var(--subdominant), #e3b341);
+}
+
+.theory-unit-card[data-color="purple"]:hover {
+    border-color: rgba(167, 139, 250, 0.5);
+    box-shadow: 0 0 15px rgba(167, 139, 250, 0.2), 0 6px 20px rgba(0,0,0,0.35);
+}
+.theory-unit-card[data-color="purple"] .theory-unit-card-progress-bar {
+    background: linear-gradient(90deg, #a78bfa, #c4b5fd);
+}
+
+.theory-unit-card[data-color="orange"]:hover {
+    border-color: rgba(249, 115, 22, 0.5);
+    box-shadow: 0 0 15px rgba(249, 115, 22, 0.2), 0 6px 20px rgba(0,0,0,0.35);
+}
+.theory-unit-card[data-color="orange"] .theory-unit-card-progress-bar {
+    background: linear-gradient(90deg, #f97316, #fb923c);
+}
+
+.theory-unit-card[data-color="teal"]:hover {
+    border-color: rgba(45, 212, 191, 0.5);
+    box-shadow: 0 0 15px rgba(45, 212, 191, 0.2), 0 6px 20px rgba(0,0,0,0.35);
+}
+.theory-unit-card[data-color="teal"] .theory-unit-card-progress-bar {
+    background: linear-gradient(90deg, #2dd4bf, #5eead4);
+}
+
+.theory-unit-card[data-color="pink"]:hover {
+    border-color: rgba(244, 114, 182, 0.5);
+    box-shadow: 0 0 15px rgba(244, 114, 182, 0.2), 0 6px 20px rgba(0,0,0,0.35);
+}
+.theory-unit-card[data-color="pink"] .theory-unit-card-progress-bar {
+    background: linear-gradient(90deg, #f472b6, #f9a8d4);
+}
+
+.theory-unit-card[data-color="indigo"]:hover {
+    border-color: rgba(129, 140, 248, 0.5);
+    box-shadow: 0 0 15px rgba(129, 140, 248, 0.2), 0 6px 20px rgba(0,0,0,0.35);
+}
+.theory-unit-card[data-color="indigo"] .theory-unit-card-progress-bar {
+    background: linear-gradient(90deg, #818cf8, #a5b4fc);
+}
+
+.theory-unit-card[data-color="cyan"]:hover {
+    border-color: rgba(34, 211, 238, 0.5);
+    box-shadow: 0 0 15px rgba(34, 211, 238, 0.2), 0 6px 20px rgba(0,0,0,0.35);
+}
+.theory-unit-card[data-color="cyan"] .theory-unit-card-progress-bar {
+    background: linear-gradient(90deg, #22d3ee, #67e8f9);
+}
+
+.theory-unit-card[data-color="emerald"]:hover {
+    border-color: rgba(52, 211, 153, 0.5);
+    box-shadow: 0 0 15px rgba(52, 211, 153, 0.2), 0 6px 20px rgba(0,0,0,0.35);
+}
+.theory-unit-card[data-color="emerald"] .theory-unit-card-progress-bar {
+    background: linear-gradient(90deg, #34d399, #6ee7b7);
+}
+
+.theory-unit-card[data-color="amber"]:hover {
+    border-color: rgba(251, 191, 36, 0.5);
+    box-shadow: 0 0 15px rgba(251, 191, 36, 0.2), 0 6px 20px rgba(0,0,0,0.35);
+}
+.theory-unit-card[data-color="amber"] .theory-unit-card-progress-bar {
+    background: linear-gradient(90deg, #fbbf24, #fcd34d);
+}
+
+/* Completed unit overlay */
+.theory-unit-card.unit-completed {
+    border-color: rgba(63, 185, 80, 0.3);
+}
+
+.theory-unit-card.unit-completed::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(63, 185, 80, 0.04);
+    pointer-events: none;
+    border-radius: inherit;
+}
+
+/* --- Unit View Hero --- */
+.theory-unit-hero {
+    border-radius: var(--radius-lg);
+    padding: 24px 28px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(88, 166, 255, 0.15);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.theory-unit-hero-inner {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 16px;
+}
+
+.theory-unit-hero-icon {
+    font-size: 2.8rem;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.theory-unit-hero-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.theory-unit-hero-info h2 {
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 4px;
+}
+
+.theory-unit-hero-info p {
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+.theory-unit-hero-progress {
+    height: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.theory-unit-hero-progress-bar {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.4s ease;
+}
+
+.theory-unit-hero-progress-text {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+.theory-unit-hero-continue {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 18px;
+    border-radius: var(--radius);
+    border: 1px solid rgba(88, 166, 255, 0.3);
+    background: rgba(88, 166, 255, 0.1);
+    color: var(--glow-cyan);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 12px;
+}
+
+.theory-unit-hero-continue:hover {
+    background: rgba(88, 166, 255, 0.2);
+    box-shadow: 0 0 16px rgba(88, 166, 255, 0.25);
+}
+
+/* Unit hero color variants */
+.theory-unit-hero[data-color="red"]    { background: linear-gradient(135deg, rgba(233, 69, 96, 0.12) 0%, var(--bg-card) 60%); border-color: rgba(233, 69, 96, 0.25); }
+.theory-unit-hero[data-color="blue"]   { background: linear-gradient(135deg, rgba(88, 166, 255, 0.12) 0%, var(--bg-card) 60%); border-color: rgba(88, 166, 255, 0.25); }
+.theory-unit-hero[data-color="green"]  { background: linear-gradient(135deg, rgba(63, 185, 80, 0.12) 0%, var(--bg-card) 60%); border-color: rgba(63, 185, 80, 0.25); }
+.theory-unit-hero[data-color="yellow"] { background: linear-gradient(135deg, rgba(210, 153, 34, 0.12) 0%, var(--bg-card) 60%); border-color: rgba(210, 153, 34, 0.25); }
+.theory-unit-hero[data-color="purple"] { background: linear-gradient(135deg, rgba(167, 139, 250, 0.12) 0%, var(--bg-card) 60%); border-color: rgba(167, 139, 250, 0.25); }
+.theory-unit-hero[data-color="orange"] { background: linear-gradient(135deg, rgba(249, 115, 22, 0.12) 0%, var(--bg-card) 60%); border-color: rgba(249, 115, 22, 0.25); }
+.theory-unit-hero[data-color="teal"]   { background: linear-gradient(135deg, rgba(45, 212, 191, 0.12) 0%, var(--bg-card) 60%); border-color: rgba(45, 212, 191, 0.25); }
+.theory-unit-hero[data-color="pink"]   { background: linear-gradient(135deg, rgba(244, 114, 182, 0.12) 0%, var(--bg-card) 60%); border-color: rgba(244, 114, 182, 0.25); }
+.theory-unit-hero[data-color="indigo"] { background: linear-gradient(135deg, rgba(129, 140, 248, 0.12) 0%, var(--bg-card) 60%); border-color: rgba(129, 140, 248, 0.25); }
+.theory-unit-hero[data-color="cyan"]   { background: linear-gradient(135deg, rgba(34, 211, 238, 0.12) 0%, var(--bg-card) 60%); border-color: rgba(34, 211, 238, 0.25); }
+.theory-unit-hero[data-color="emerald"]{ background: linear-gradient(135deg, rgba(52, 211, 153, 0.12) 0%, var(--bg-card) 60%); border-color: rgba(52, 211, 153, 0.25); }
+.theory-unit-hero[data-color="amber"]  { background: linear-gradient(135deg, rgba(251, 191, 36, 0.12) 0%, var(--bg-card) 60%); border-color: rgba(251, 191, 36, 0.25); }
+
+/* Unit hero progress bar color variants */
+.theory-unit-hero[data-color="red"]    .theory-unit-hero-progress-bar { background: linear-gradient(90deg, var(--accent), #ff6b81); box-shadow: 0 0 8px rgba(233,69,96,0.4); }
+.theory-unit-hero[data-color="blue"]   .theory-unit-hero-progress-bar { background: linear-gradient(90deg, var(--accent-blue), #79b8ff); box-shadow: 0 0 8px rgba(88,166,255,0.4); }
+.theory-unit-hero[data-color="green"]  .theory-unit-hero-progress-bar { background: linear-gradient(90deg, var(--tonic), #56d364); box-shadow: 0 0 8px rgba(63,185,80,0.4); }
+.theory-unit-hero[data-color="yellow"] .theory-unit-hero-progress-bar { background: linear-gradient(90deg, var(--subdominant), #e3b341); box-shadow: 0 0 8px rgba(210,153,34,0.4); }
+.theory-unit-hero[data-color="purple"] .theory-unit-hero-progress-bar { background: linear-gradient(90deg, #a78bfa, #c4b5fd); box-shadow: 0 0 8px rgba(167,139,250,0.4); }
+.theory-unit-hero[data-color="orange"] .theory-unit-hero-progress-bar { background: linear-gradient(90deg, #f97316, #fb923c); box-shadow: 0 0 8px rgba(249,115,22,0.4); }
+.theory-unit-hero[data-color="teal"]   .theory-unit-hero-progress-bar { background: linear-gradient(90deg, #2dd4bf, #5eead4); box-shadow: 0 0 8px rgba(45,212,191,0.4); }
+.theory-unit-hero[data-color="pink"]   .theory-unit-hero-progress-bar { background: linear-gradient(90deg, #f472b6, #f9a8d4); box-shadow: 0 0 8px rgba(244,114,182,0.4); }
+.theory-unit-hero[data-color="indigo"] .theory-unit-hero-progress-bar { background: linear-gradient(90deg, #818cf8, #a5b4fc); box-shadow: 0 0 8px rgba(129,140,248,0.4); }
+.theory-unit-hero[data-color="cyan"]   .theory-unit-hero-progress-bar { background: linear-gradient(90deg, #22d3ee, #67e8f9); box-shadow: 0 0 8px rgba(34,211,238,0.4); }
+.theory-unit-hero[data-color="emerald"].theory-unit-hero-progress-bar { background: linear-gradient(90deg, #34d399, #6ee7b7); box-shadow: 0 0 8px rgba(52,211,153,0.4); }
+.theory-unit-hero[data-color="amber"]  .theory-unit-hero-progress-bar { background: linear-gradient(90deg, #fbbf24, #fcd34d); box-shadow: 0 0 8px rgba(251,191,36,0.4); }
+
+/* --- Lesson Tile Grid --- */
+.theory-lesson-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 14px;
+}
+
+.theory-lesson-tile {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 18px 16px;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 8px;
+    position: relative;
+    min-height: 130px;
+}
+
+.theory-lesson-tile:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: var(--glow-md), 0 6px 20px rgba(0,0,0,0.35);
+    border-color: var(--glow-cyan-border);
+}
+
+.theory-lesson-tile-num {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    border: 2px solid var(--border);
+    color: var(--text-muted);
+    background: var(--bg-surface);
+    transition: all 0.2s;
+}
+
+.theory-lesson-tile-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.3;
+    flex: 1;
+}
+
+.theory-lesson-tile-status {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 2px 8px;
+    border-radius: 8px;
+    margin-top: auto;
+}
+
+/* Tile states */
+.theory-lesson-tile.completed {
+    border-color: rgba(63, 185, 80, 0.25);
+}
+
+.theory-lesson-tile.completed::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(63, 185, 80, 0.04);
+    border-radius: inherit;
+    pointer-events: none;
+}
+
+.theory-lesson-tile.completed .theory-lesson-tile-num {
+    background: var(--tonic);
+    border-color: var(--tonic);
+    color: white;
+}
+
+.theory-lesson-tile.completed .theory-lesson-tile-title {
+    color: var(--text-muted);
+}
+
+.theory-lesson-tile.completed .theory-lesson-tile-status {
+    background: rgba(63, 185, 80, 0.12);
+    color: var(--tonic);
+}
+
+.theory-lesson-tile.current {
+    border-color: var(--glow-cyan-border);
+    box-shadow: 0 0 12px rgba(88, 166, 255, 0.2);
+}
+
+.theory-lesson-tile.current .theory-lesson-tile-num {
+    background: rgba(88, 166, 255, 0.15);
+    border-color: var(--glow-cyan);
+    color: var(--glow-cyan);
+}
+
+.theory-lesson-tile.current .theory-lesson-tile-status {
+    background: rgba(88, 166, 255, 0.12);
+    color: var(--glow-cyan);
+}
+
+.theory-lesson-tile.pending {
+    opacity: 0.6;
+}
+
+.theory-lesson-tile.pending:hover {
+    opacity: 1;
+}
+
+.theory-lesson-tile.pending .theory-lesson-tile-status {
+    background: rgba(139, 148, 158, 0.08);
+    color: var(--text-dim);
+}
+
+/* --- Lesson Stepper (dots at top of lesson view) --- */
+.theory-lesson-stepper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 16px 0;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+}
+
+.theory-lesson-stepper-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+}
+
+.theory-lesson-stepper-dot:hover {
+    border-color: var(--text-muted);
+    transform: scale(1.2);
+}
+
+.theory-lesson-stepper-dot.completed {
+    background: var(--tonic);
+    border-color: var(--tonic);
+}
+
+.theory-lesson-stepper-dot.active {
+    width: 28px;
+    border-radius: 5px;
+    background: var(--glow-cyan);
+    border-color: var(--glow-cyan);
+    box-shadow: 0 0 8px rgba(88, 166, 255, 0.4);
+}
+
+.theory-lesson-stepper-label {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-left: 10px;
+    white-space: nowrap;
+}
+
+/* --- Quiz Animations --- */
+@keyframes quiz-correct-pulse {
+    0%   { transform: scale(1); }
+    30%  { transform: scale(1.05); }
+    60%  { transform: scale(0.98); }
+    100% { transform: scale(1); }
+}
+
+@keyframes quiz-wrong-shake {
+    0%, 100% { transform: translateX(0); }
+    15%      { transform: translateX(-6px); }
+    30%      { transform: translateX(6px); }
+    45%      { transform: translateX(-4px); }
+    60%      { transform: translateX(4px); }
+    75%      { transform: translateX(-2px); }
+    90%      { transform: translateX(2px); }
+}
+
+@keyframes quiz-success-appear {
+    0%   { opacity: 0; transform: translateY(8px) scale(0.95); }
+    60%  { transform: translateY(-2px) scale(1.02); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.quiz-option.correct {
+    animation: quiz-correct-pulse 0.4s ease;
+}
+
+.quiz-option.wrong {
+    animation: quiz-wrong-shake 0.5s ease;
+}
+
+.quiz-success-msg {
+    margin-top: 12px;
+    padding: 12px 18px;
+    border-radius: var(--radius);
+    background: rgba(63, 185, 80, 0.1);
+    border: 1px solid rgba(63, 185, 80, 0.3);
+    color: var(--tonic);
+    font-weight: 600;
+    font-size: 0.9rem;
+    animation: quiz-success-appear 0.4s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.quiz-success-msg-icon {
+    font-size: 1.3rem;
+}
+
+/* Lesson completion checkmark animation */
+@keyframes lesson-complete-check {
+    0%   { transform: scale(0) rotate(-45deg); opacity: 0; }
+    50%  { transform: scale(1.2) rotate(0deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+.lesson-complete-banner {
+    margin-top: 20px;
+    padding: 16px 20px;
+    border-radius: var(--radius-lg);
+    background: linear-gradient(135deg, rgba(63, 185, 80, 0.1) 0%, rgba(63, 185, 80, 0.04) 100%);
+    border: 1px solid rgba(63, 185, 80, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    animation: quiz-success-appear 0.5s ease;
+}
+
+.lesson-complete-banner-check {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--tonic);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+    animation: lesson-complete-check 0.5s ease 0.1s both;
+    flex-shrink: 0;
+}
+
+.lesson-complete-banner-text {
+    flex: 1;
+}
+
+.lesson-complete-banner-text strong {
+    display: block;
+    color: var(--tonic);
+    font-size: 0.95rem;
+    margin-bottom: 2px;
+}
+
+.lesson-complete-banner-text span {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+}
+
+.theory-lesson-nav-btns .btn.btn-next-highlight {
+    border-color: var(--glow-cyan-border);
+    background: rgba(88, 166, 255, 0.1);
+    color: var(--glow-cyan);
+    font-weight: 600;
+    box-shadow: 0 0 10px rgba(88, 166, 255, 0.15);
+}
+
+.theory-lesson-nav-btns .btn.btn-next-highlight:hover {
+    background: rgba(88, 166, 255, 0.2);
+    box-shadow: 0 0 18px rgba(88, 166, 255, 0.3);
+}
+
+/* --- Section progress in dashboard --- */
+.theory-section-progress {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.theory-section-progress-bar {
+    width: 60px;
+    height: 4px;
+    background: var(--bg-surface);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.theory-section-progress-fill {
+    height: 100%;
+    background: var(--glow-cyan);
+    border-radius: 2px;
+    transition: width 0.3s;
+}
+
+.theory-section-progress-text {
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    font-weight: 600;
+}
+
+/* --- Responsive for new course elements --- */
+@media (max-width: 700px) {
+    .theory-hero {
+        padding: 20px 18px;
+    }
+    .theory-hero-top {
+        flex-direction: column;
+        gap: 10px;
+    }
+    .theory-hero-pct {
+        font-size: 1.4rem;
+    }
+    .theory-hero-title {
+        font-size: 1.2rem;
+    }
+    .theory-hero-stats {
+        gap: 14px;
+    }
+    .theory-hero-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .theory-hero-continue {
+        justify-content: center;
+    }
+    .theory-unit-hero {
+        padding: 18px 16px;
+    }
+    .theory-unit-hero-icon {
+        font-size: 2rem;
+    }
+    .theory-unit-hero-info h2 {
+        font-size: 1.1rem;
+    }
+    .theory-lesson-grid {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 10px;
+    }
+    .theory-lesson-tile {
+        padding: 14px 12px;
+        min-height: 110px;
+    }
+    .theory-lesson-stepper {
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+    .theory-lesson-stepper-label {
+        width: 100%;
+        text-align: center;
+        margin-left: 0;
+        margin-top: 6px;
     }
 }

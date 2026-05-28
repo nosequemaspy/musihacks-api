@@ -3678,6 +3678,31 @@ const Theory = (() => {
         return { completed, total: unitLessons.length };
     }
 
+    function getNextPendingLesson() {
+        for (const unit of units) {
+            for (const lid of unit.lessonIds) {
+                if (!completedLessons.has(lid)) {
+                    const lesson = lessons.find(l => l.id === lid);
+                    return { unit, lesson };
+                }
+            }
+        }
+        return null;
+    }
+
+    function getSectionProgress(sectionName) {
+        let total = 0, completed = 0;
+        for (const unit of units) {
+            if (unit.section === sectionName) {
+                for (const lid of unit.lessonIds) {
+                    total++;
+                    if (completedLessons.has(lid)) completed++;
+                }
+            }
+        }
+        return { total, completed, pct: total > 0 ? Math.round((completed / total) * 100) : 0 };
+    }
+
     function renderDashboard() {
         currentView = 'dashboard';
         currentUnit = null;
@@ -3701,18 +3726,44 @@ const Theory = (() => {
 
         const totalLessons = lessons.length;
         const totalCompleted = completedLessons.size;
+        const globalPct = totalLessons > 0 ? Math.round((totalCompleted / totalLessons) * 100) : 0;
+        const nextPending = getNextPendingLesson();
 
-        let html = '<h2>Curso de Teoría Musical</h2>';
-        html += `<p style="color:var(--text-muted);margin-bottom:16px;">${units.length} unidades · ${totalLessons} lecciones interactivas · Desde fundamentos hasta maestría</p>`;
+        let html = '<div class="theory-view-enter">';
+
+        // === Hero Banner ===
+        html += `
+            <div class="theory-hero">
+                <div class="theory-hero-top">
+                    <div>
+                        <div class="theory-hero-title">Curso de Teoria Musical</div>
+                        <div class="theory-hero-subtitle">${units.length} unidades · ${totalLessons} lecciones interactivas</div>
+                    </div>
+                    <div class="theory-hero-pct">${globalPct}<small>%</small></div>
+                </div>
+                <div class="theory-hero-progress">
+                    <div class="theory-hero-progress-bar" style="width:${globalPct}%"></div>
+                </div>
+                <div class="theory-hero-progress-text">${totalCompleted} de ${totalLessons} lecciones completadas</div>
+                <div class="theory-hero-actions">
+                    ${nextPending ? `<button class="theory-hero-continue" id="theory-hero-continue-btn">▶ Continuar: ${nextPending.unit.title.replace(/^Unidad \d+: /, '')} - ${nextPending.lesson.title.replace(/^\d+\.\s*/, '')}</button>` : '<span style="color:var(--tonic);font-weight:600;">🎉 ¡Curso completado!</span>'}
+                </div>
+                <div class="theory-hero-stats" style="margin-top:14px;">
+                    <div class="theory-hero-stat">Teoria: <span class="theory-hero-stat-value">${getSectionProgress('teoria').pct}%</span></div>
+                    <div class="theory-hero-stat">Herramientas: <span class="theory-hero-stat-value">${getSectionProgress('herramientas').pct}%</span></div>
+                    <div class="theory-hero-stat">Referencia: <span class="theory-hero-stat-value">${getSectionProgress('referencia').pct}%</span></div>
+                </div>
+            </div>
+        `;
 
         // Quick-access pill bar
         html += `
             <div class="theory-quick-access">
                 <button class="theory-quick-pill" data-ref="intervals"><span class="theory-quick-pill-icon">📏</span> Intervalos</button>
-                <button class="theory-quick-pill" data-ref="chord-formulas"><span class="theory-quick-pill-icon">🎵</span> Fórmulas de Acordes</button>
+                <button class="theory-quick-pill" data-ref="chord-formulas"><span class="theory-quick-pill-icon">🎵</span> Formulas de Acordes</button>
                 <button class="theory-quick-pill" data-ref="degrees"><span class="theory-quick-pill-icon">🏛️</span> Grados y Funciones</button>
                 <button class="theory-quick-pill" data-ref="scales"><span class="theory-quick-pill-icon">🎹</span> Escalas</button>
-                <button class="theory-quick-pill" data-ref="circle"><span class="theory-quick-pill-icon">⭕</span> Círculo de Quintas</button>
+                <button class="theory-quick-pill" data-ref="circle"><span class="theory-quick-pill-icon">⭕</span> Circulo de Quintas</button>
             </div>
         `;
 
@@ -3720,18 +3771,23 @@ const Theory = (() => {
 
         let currentSection = null;
         for (const unit of units) {
-            // Section separator
+            // Section separator with progress
             if (unit.section && unit.section !== currentSection) {
                 currentSection = unit.section;
                 const sectionLabels = {
-                    'teoria': 'Teoría Musical',
-                    'herramientas': 'Herramientas Armónicas',
+                    'teoria': 'Teoria Musical',
+                    'herramientas': 'Herramientas Armonicas',
                     'referencia': 'Referencia y Recursos',
                 };
+                const sp = getSectionProgress(currentSection);
                 html += `
                     <div class="theory-section-separator">
                         <div class="theory-section-separator-line"></div>
                         <span class="theory-section-separator-label">${sectionLabels[currentSection] || currentSection}</span>
+                        <div class="theory-section-progress">
+                            <div class="theory-section-progress-bar"><div class="theory-section-progress-fill" style="width:${sp.pct}%"></div></div>
+                            <span class="theory-section-progress-text">${sp.pct}%</span>
+                        </div>
                         <div class="theory-section-separator-line"></div>
                     </div>
                 `;
@@ -3739,8 +3795,20 @@ const Theory = (() => {
 
             const prog = getUnitProgress(unit);
             const pct = prog.total > 0 ? Math.round((prog.completed / prog.total) * 100) : 0;
+            const isCompleted = pct === 100;
+            const isInProgress = pct > 0 && pct < 100;
+
+            let badgeHtml = '';
+            if (isCompleted) {
+                badgeHtml = '<span class="theory-unit-badge completed">✓ Completada</span>';
+            } else if (isInProgress) {
+                badgeHtml = '<span class="theory-unit-badge in-progress">En progreso</span>';
+            } else {
+                badgeHtml = '<span class="theory-unit-badge pending">Pendiente</span>';
+            }
+
             html += `
-                <div class="theory-unit-card" data-color="${unit.color}" data-unit-id="${unit.id}">
+                <div class="theory-unit-card ${isCompleted ? 'unit-completed' : ''}" data-color="${unit.color}" data-unit-id="${unit.id}">
                     <div class="theory-unit-card-header">
                         <div class="theory-unit-card-icon">${unit.icon}</div>
                         <div class="theory-unit-card-info">
@@ -3751,13 +3819,25 @@ const Theory = (() => {
                     <div class="theory-unit-card-progress">
                         <div class="theory-unit-card-progress-bar" style="width:${pct}%"></div>
                     </div>
-                    <div class="theory-unit-card-progress-text">${prog.completed} / ${prog.total} lecciones</div>
+                    <div class="theory-unit-card-meta">
+                        ${badgeHtml}
+                        <span class="theory-unit-card-progress-text">${prog.completed}/${prog.total}${isCompleted ? ' <span class="theory-unit-pct-badge">100%</span>' : ''}</span>
+                    </div>
                 </div>
             `;
         }
 
-        html += '</div>';
+        html += '</div></div>';
         content.innerHTML = html;
+
+        // Bind "Continue" button
+        const continueBtn = document.getElementById('theory-hero-continue-btn');
+        if (continueBtn && nextPending) {
+            continueBtn.addEventListener('click', () => {
+                currentUnit = nextPending.unit;
+                showLesson(nextPending.lesson);
+            });
+        }
 
         // Bind click events
         content.querySelectorAll('.theory-unit-card').forEach(card => {
@@ -3803,33 +3883,73 @@ const Theory = (() => {
 
         const unitLessons = unit.lessonIds.map(id => lessons.find(l => l.id === id)).filter(Boolean);
         const prog = getUnitProgress(unit);
+        const pct = prog.total > 0 ? Math.round((prog.completed / prog.total) * 100) : 0;
 
-        let html = `
-            <div class="theory-unit-header">
-                <div class="theory-unit-header-icon">${unit.icon}</div>
-                <div class="theory-unit-header-info">
-                    <h2>${unit.title}</h2>
-                    <p>${unit.subtitle} · ${prog.completed}/${prog.total} completadas</p>
+        // Find first non-completed lesson in this unit
+        let firstPendingLesson = null;
+        for (const l of unitLessons) {
+            if (!completedLessons.has(l.id)) { firstPendingLesson = l; break; }
+        }
+
+        let html = '<div class="theory-view-enter">';
+
+        // === Unit Hero ===
+        html += `
+            <div class="theory-unit-hero" data-color="${unit.color}">
+                <div class="theory-unit-hero-inner">
+                    <div class="theory-unit-hero-icon">${unit.icon}</div>
+                    <div class="theory-unit-hero-info">
+                        <h2>${unit.title}</h2>
+                        <p>${unit.subtitle}</p>
+                    </div>
                 </div>
+                <div class="theory-unit-hero-progress">
+                    <div class="theory-unit-hero-progress-bar" style="width:${pct}%"></div>
+                </div>
+                <div class="theory-unit-hero-progress-text">
+                    <span>${prog.completed} de ${prog.total} lecciones · ${pct}%</span>
+                    <span>${pct === 100 ? '✓ Completada' : ''}</span>
+                </div>
+                ${firstPendingLesson ? `<button class="theory-unit-hero-continue" id="unit-continue-btn">▶ ${pct > 0 ? 'Continuar' : 'Comenzar'}: ${firstPendingLesson.title.replace(/^\d+\.\s*/, '')}</button>` : ''}
             </div>
         `;
 
-        for (const lesson of unitLessons) {
+        // === Lesson Tile Grid ===
+        html += '<div class="theory-lesson-grid">';
+        for (let i = 0; i < unitLessons.length; i++) {
+            const lesson = unitLessons[i];
             const isCompleted = completedLessons.has(lesson.id);
+            const isCurrent = !isCompleted && lesson === firstPendingLesson;
+            const isPending = !isCompleted && !isCurrent;
+            const stateClass = isCompleted ? 'completed' : isCurrent ? 'current' : 'pending';
+
+            let statusLabel = '';
+            if (isCompleted) statusLabel = '✓ Completa';
+            else if (isCurrent) statusLabel = '▶ Actual';
+            else statusLabel = 'Pendiente';
+
             html += `
-                <div class="theory-lesson-card ${isCompleted ? 'completed' : ''}" data-lesson-id="${lesson.id}">
-                    <div class="theory-lesson-card-check">${isCompleted ? '✓' : ''}</div>
-                    <div class="theory-lesson-card-title">${lesson.title}</div>
+                <div class="theory-lesson-tile ${stateClass}" data-lesson-id="${lesson.id}">
+                    <div class="theory-lesson-tile-num">${isCompleted ? '✓' : (i + 1)}</div>
+                    <div class="theory-lesson-tile-title">${lesson.title.replace(/^\d+\.\s*/, '')}</div>
+                    <div class="theory-lesson-tile-status">${statusLabel}</div>
                 </div>
             `;
         }
+        html += '</div></div>';
 
         content.innerHTML = html;
 
-        // Bind click events
-        content.querySelectorAll('.theory-lesson-card').forEach(card => {
-            card.addEventListener('click', () => {
-                const lid = card.dataset.lessonId;
+        // Bind "Continue" in unit hero
+        const unitContinueBtn = document.getElementById('unit-continue-btn');
+        if (unitContinueBtn && firstPendingLesson) {
+            unitContinueBtn.addEventListener('click', () => showLesson(firstPendingLesson));
+        }
+
+        // Bind click events on tiles
+        content.querySelectorAll('.theory-lesson-tile').forEach(tile => {
+            tile.addEventListener('click', () => {
+                const lid = tile.dataset.lessonId;
                 const lesson = lessons.find(l => l.id === lid);
                 if (lesson) showLesson(lesson);
             });
@@ -3870,7 +3990,26 @@ const Theory = (() => {
             ]);
         }
 
-        let html = `<h2>${lesson.title}</h2>${lesson.content}`;
+        let html = '<div class="theory-view-enter">';
+
+        // === Lesson Stepper (position dots) ===
+        if (unit) {
+            const unitLessons = unit.lessonIds.map(id => lessons.find(l => l.id === id)).filter(Boolean);
+            const currentIdx = unitLessons.findIndex(l => l.id === lesson.id);
+
+            html += '<div class="theory-lesson-stepper">';
+            for (let i = 0; i < unitLessons.length; i++) {
+                const ul = unitLessons[i];
+                const dotCompleted = completedLessons.has(ul.id);
+                const dotActive = ul.id === lesson.id;
+                const dotClass = dotActive ? 'active' : dotCompleted ? 'completed' : '';
+                html += `<div class="theory-lesson-stepper-dot ${dotClass}" data-step-lesson="${ul.id}" title="${ul.title}"></div>`;
+            }
+            html += `<span class="theory-lesson-stepper-label">Leccion ${currentIdx + 1} de ${unitLessons.length}</span>`;
+            html += '</div>';
+        }
+
+        html += `<h2>${lesson.title}</h2>${lesson.content}`;
 
         // Gather all quizzes: support both quiz (single) and quizzes (array)
         const allQuizzes = [];
@@ -3883,12 +4022,12 @@ const Theory = (() => {
         // Render quizzes
         for (let qi = 0; qi < allQuizzes.length; qi++) {
             const q = allQuizzes[qi];
-            const quizLabel = allQuizzes.length > 1 ? `Quiz ${qi + 1}` : 'Quiz rápido';
+            const quizLabel = allQuizzes.length > 1 ? `Quiz ${qi + 1}` : 'Quiz rapido';
             html += `
-                <div class="quiz-section">
+                <div class="quiz-section" data-quiz-section="${qi}">
                     <h4>${quizLabel}</h4>
                     <p>${q.question}</p>
-                    <div class="quiz-options" data-correct="${q.correct}" data-lesson="${lesson.id}" data-quiz-index="${qi}">
+                    <div class="quiz-options" data-correct="${q.correct}" data-lesson="${lesson.id}" data-quiz-index="${qi}" data-total-quizzes="${allQuizzes.length}">
                         ${q.options.map((opt, i) =>
                             `<button class="quiz-option" data-index="${i}">${opt}</button>`
                         ).join('')}
@@ -3903,15 +4042,16 @@ const Theory = (() => {
             const unitLessons = unit.lessonIds.map(id => lessons.find(l => l.id === id)).filter(Boolean);
             const currentIdx = unitLessons.findIndex(l => l.id === lesson.id);
 
-            // Also consider cross-unit navigation
-            const globalIdx = lessons.findIndex(l => l.id === lesson.id);
             const prevLesson = currentIdx > 0 ? unitLessons[currentIdx - 1] : null;
             const nextLesson = currentIdx < unitLessons.length - 1 ? unitLessons[currentIdx + 1] : null;
+            const isCompleted = completedLessons.has(lesson.id);
 
             html += '<div class="theory-lesson-nav-btns">';
             html += `<button class="btn" id="theory-prev-btn" ${!prevLesson ? 'disabled' : ''}>← ${prevLesson ? prevLesson.title : 'Anterior'}</button>`;
-            html += `<button class="btn" id="theory-next-btn" ${!nextLesson ? 'disabled' : ''}>${nextLesson ? nextLesson.title : 'Siguiente'} →</button>`;
+            html += `<button class="btn ${isCompleted && nextLesson ? 'btn-next-highlight' : ''}" id="theory-next-btn" ${!nextLesson ? 'disabled' : ''}>${nextLesson ? nextLesson.title : 'Siguiente'} →</button>`;
             html += '</div>';
+
+            html += '</div>'; // close theory-view-enter
 
             content.innerHTML = html;
 
@@ -3925,8 +4065,18 @@ const Theory = (() => {
                 nextBtn.addEventListener('click', () => showLesson(nextLesson));
             }
         } else {
+            html += '</div>'; // close theory-view-enter
             content.innerHTML = html;
         }
+
+        // Bind stepper dot clicks
+        content.querySelectorAll('.theory-lesson-stepper-dot').forEach(dot => {
+            dot.addEventListener('click', () => {
+                const lid = dot.dataset.stepLesson;
+                const l = lessons.find(x => x.id === lid);
+                if (l) showLesson(l);
+            });
+        });
 
         setupExampleButtons();
         setupQuiz();
@@ -3968,7 +4118,11 @@ const Theory = (() => {
     }
 
     function setupQuiz() {
-        document.querySelectorAll('.quiz-options').forEach(container => {
+        let quizCorrectCount = 0;
+        const quizContainers = document.querySelectorAll('.quiz-options');
+        const totalQuizzes = quizContainers.length;
+
+        quizContainers.forEach(container => {
             const correct = parseInt(container.dataset.correct);
             const lessonId = container.dataset.lesson;
 
@@ -3982,19 +4136,82 @@ const Theory = (() => {
 
                     if (index === correct) {
                         btn.classList.add('correct');
-                        feedback.textContent = 'Correcto!';
-                        feedback.style.color = 'var(--tonic)';
+                        feedback.innerHTML = '<div class="quiz-success-msg"><span class="quiz-success-msg-icon">✓</span> Correcto!</div>';
                         completedLessons.add(lessonId);
                         saveProgress();
+
+                        // Save timestamp of last completed lesson
+                        try {
+                            localStorage.setItem('musihacks_theory_last_completed', JSON.stringify({
+                                lessonId: lessonId,
+                                timestamp: Date.now()
+                            }));
+                        } catch (e) { /* ignore */ }
+
                         renderNav();
+                        quizCorrectCount++;
+
+                        // Check if all quizzes in this lesson are answered correctly
+                        if (quizCorrectCount >= totalQuizzes && totalQuizzes > 0) {
+                            showLessonCompleteBanner(lessonId);
+                        }
+
+                        // Highlight next button after completing quiz
+                        const nextBtn = document.getElementById('theory-next-btn');
+                        if (nextBtn && !nextBtn.disabled) {
+                            nextBtn.classList.add('btn-next-highlight');
+                        }
                     } else {
                         btn.classList.add('wrong');
                         container.querySelectorAll('.quiz-option')[correct].classList.add('correct');
-                        feedback.textContent = 'Incorrecto. La respuesta correcta está marcada en verde.';
+                        feedback.textContent = 'Incorrecto. La respuesta correcta esta marcada en verde.';
                         feedback.style.color = 'var(--dominant)';
                     }
                 });
             });
+        });
+    }
+
+    function showLessonCompleteBanner(lessonId) {
+        const content = document.getElementById('theory-content');
+        if (!content) return;
+
+        // Don't add if already present
+        if (content.querySelector('.lesson-complete-banner')) return;
+
+        const unit = currentUnit;
+        let nextLessonInUnit = null;
+        if (unit) {
+            const unitLessons = unit.lessonIds.map(id => lessons.find(l => l.id === id)).filter(Boolean);
+            const idx = unitLessons.findIndex(l => l.id === lessonId);
+            if (idx >= 0 && idx < unitLessons.length - 1) {
+                nextLessonInUnit = unitLessons[idx + 1];
+            }
+        }
+
+        const banner = document.createElement('div');
+        banner.className = 'lesson-complete-banner';
+        banner.innerHTML = `
+            <div class="lesson-complete-banner-check">✓</div>
+            <div class="lesson-complete-banner-text">
+                <strong>Leccion completada!</strong>
+                <span>${nextLessonInUnit ? 'Siguiente: ' + nextLessonInUnit.title : 'Has completado esta unidad.'}</span>
+            </div>
+        `;
+
+        // Insert before the nav buttons
+        const navBtns = content.querySelector('.theory-lesson-nav-btns');
+        if (navBtns) {
+            navBtns.parentNode.insertBefore(banner, navBtns);
+        } else {
+            content.appendChild(banner);
+        }
+
+        // Update stepper dots
+        content.querySelectorAll('.theory-lesson-stepper-dot').forEach(dot => {
+            if (dot.dataset.stepLesson === lessonId) {
+                dot.classList.add('completed');
+            }
         });
     }
 
