@@ -92,7 +92,7 @@ const Chordify = (() => {
 
     // ─── Mini Piano Keyboard ────────────────────────
 
-    function renderMiniPiano(containerId, midiNotes, rootMidi) {
+    function renderMiniPiano(containerId, midiNotes, rootMidi, bassMidi = null) {
         const container = document.getElementById(containerId);
         if (!container) return;
 
@@ -130,6 +130,7 @@ const Chordify = (() => {
                 const dot = document.createElement('span');
                 dot.className = 'key-dot';
                 if (midi === rootMidi) key.classList.add('root');
+                else if (bassMidi != null && midi === bassMidi) key.classList.add('bass');
                 key.appendChild(dot);
             }
 
@@ -155,6 +156,7 @@ const Chordify = (() => {
                 const dot = document.createElement('span');
                 dot.className = 'key-dot';
                 if (midi === rootMidi) key.classList.add('root');
+                else if (bassMidi != null && midi === bassMidi) key.classList.add('bass');
                 key.appendChild(dot);
             }
 
@@ -166,19 +168,21 @@ const Chordify = (() => {
     }
 
     function chordToMidiNotes(chord) {
-        if (!chord || !chord.notes || chord.notes.length === 0) return { midiNotes: [], rootMidi: null };
+        if (!chord || !chord.notes || chord.notes.length === 0) return { midiNotes: [], rootMidi: null, bassMidi: null };
 
         const midiNotes = [];
         let octave = 4;
         let prevPC = -1;
+        let bassMidi = null;
 
         // Bass note in octave 3 if inversion
         if (chord.bass && chord.inversion > 0) {
             const bassPC = Piano.noteToPC(chord.bass);
-            const bassMidi = 48 + bassPC; // octave 3 (C3=48)
+            const bm = 48 + bassPC; // octave 3 (C3=48)
             // Only include if in mini piano range
-            if (bassMidi >= MINI_START && bassMidi <= MINI_END) {
-                midiNotes.push(bassMidi);
+            if (bm >= MINI_START && bm <= MINI_END) {
+                midiNotes.push(bm);
+                bassMidi = bm;
             }
         }
 
@@ -198,14 +202,14 @@ const Chordify = (() => {
             prevPC = pc;
         }
 
-        return { midiNotes, rootMidi };
+        return { midiNotes, rootMidi, bassMidi };
     }
 
     function updateMiniPianos(chord, nextChord) {
         // Current chord piano
         if (chord) {
-            const { midiNotes, rootMidi } = chordToMidiNotes(chord);
-            renderMiniPiano('mini-piano-current', midiNotes, rootMidi);
+            const { midiNotes, rootMidi, bassMidi } = chordToMidiNotes(chord);
+            renderMiniPiano('mini-piano-current', midiNotes, rootMidi, bassMidi);
             const nameEl = document.getElementById('mini-piano-chord-name');
             if (nameEl) nameEl.innerHTML = formatChordSymbol(chord, true); // Show bass label
         } else {
@@ -216,8 +220,8 @@ const Chordify = (() => {
 
         // Next chord piano
         if (nextChord) {
-            const { midiNotes, rootMidi } = chordToMidiNotes(nextChord);
-            renderMiniPiano('mini-piano-next', midiNotes, rootMidi);
+            const { midiNotes, rootMidi, bassMidi } = chordToMidiNotes(nextChord);
+            renderMiniPiano('mini-piano-next', midiNotes, rootMidi, bassMidi);
             const nameEl = document.getElementById('mini-piano-next-name');
             if (nameEl) nameEl.innerHTML = formatChordSymbol(nextChord, true); // Show bass label
         } else {
@@ -267,8 +271,8 @@ const Chordify = (() => {
         const tempChord = { ...chord, notes: rotated };
         const nextChord = (currentIdx + 1 < analysis.chords.length) ? analysis.chords[currentIdx + 1] : null;
 
-        const { midiNotes, rootMidi } = chordToMidiNotes(tempChord);
-        renderMiniPiano('mini-piano-current', midiNotes, rootMidi);
+        const { midiNotes, rootMidi, bassMidi } = chordToMidiNotes(tempChord);
+        renderMiniPiano('mini-piano-current', midiNotes, rootMidi, bassMidi);
 
         // Also update the main piano highlights
         updatePianoHighlight(tempChord);

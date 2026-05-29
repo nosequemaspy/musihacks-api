@@ -2649,6 +2649,14 @@ section {
     box-shadow: 0 0 6px var(--accent);
 }
 
+.mini-piano-container .mini-key.bass .key-dot {
+    background: transparent !important;
+    border: 2px solid var(--accent-blue);
+    box-shadow: 0 0 5px var(--accent-blue);
+    width: 9px;
+    height: 9px;
+}
+
 /* Navigation below the piano */
 .mini-piano-nav {
     display: flex;
