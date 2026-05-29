@@ -16,6 +16,7 @@ from .theory import advanced_harmony
 from .theory import cinematic_harmony
 from . import audio_analyzer
 from . import stem_separator
+from . import midi_generator
 
 app = FastAPI(
     title="MusiHacks - Music Theory API",
@@ -67,6 +68,9 @@ class ChordImprovRequest(BaseModel):
 
 class ChordifyRequest(BaseModel):
     url: str
+
+class MidiAccompRequest(BaseModel):
+    pattern: str = "block"
 
 
 # --- API Endpoints ---
@@ -661,6 +665,147 @@ def api_get_stem(task_id: str, stem_name: str):
             return FileResponse(path, media_type=media_type, filename=f"{stem_name}{ext}")
 
     raise HTTPException(404, "Stem no encontrado")
+
+
+# --- MIDI Accompaniment & Transcription Endpoints ---
+
+_midi_transcription_tasks: dict = {}
+
+
+@app.post("/api/chordify/midi-accompaniment/{task_id}")
+def api_midi_accompaniment(task_id: str, req: MidiAccompRequest):
+    """Generate MIDI accompaniment from detected chords."""
+    if task_id not in _chordify_tasks:
+        raise HTTPException(404, "Tarea de análisis no encontrada")
+
+    chordify_task = _chordify_tasks[task_id]
+    if chordify_task["status"] != "completed" or not chordify_task["result"]:
+        raise HTTPException(400, "El análisis aún no está completo")
+
+    result = chordify_task["result"]
+    chords = result.get("chords", [])
+    tempo = result.get("tempo", 120)
+
+    if not chords:
+        raise HTTPException(400, "No hay acordes para generar MIDI")
+
+    if req.pattern not in midi_generator.ACCOMPANIMENT_PATTERNS:
+        raise HTTPException(400, f"Patrón inválido. Opciones: {midi_generator.ACCOMPANIMENT_PATTERNS}")
+
+    try:
+        midi_result = midi_generator.generate_accompaniment_midi(
+            chords, tempo, req.pattern, task_id
+        )
+        return {
+            "download_url": f"/api/midi/{task_id}/accompaniment/{req.pattern}",
+            "note_events": midi_result["note_events"],
+            "pattern": req.pattern,
+        }
+    except Exception as e:
+        raise HTTPException(500, f"Error generando MIDI: {str(e)}")
+
+
+@app.get("/api/midi/{task_id}/accompaniment/{pattern}")
+def api_midi_accompaniment_file(task_id: str, pattern: str):
+    """Serve MIDI accompaniment file for download."""
+    filename = f"{task_id}_accomp_{pattern}.mid"
+    filepath = os.path.join(midi_generator.MIDI_DIR, filename)
+
+    if not os.path.exists(filepath):
+        raise HTTPException(404, "Archivo MIDI no encontrado")
+
+    return FileResponse(
+        filepath,
+        media_type="audio/midi",
+        filename=filename,
+    )
+
+
+@app.post("/api/chordify/transcribe/{task_id}")
+def api_transcribe_midi(task_id: str, background_tasks: BackgroundTasks):
+    """Start audio-to-MIDI transcription using basic-pitch."""
+    if task_id not in _chordify_tasks:
+        raise HTTPException(404, "Tarea de análisis no encontrada")
+
+    chordify_task = _chordify_tasks[task_id]
+    if chordify_task["status"] != "completed" or not chordify_task["result"]:
+        raise HTTPException(400, "El análisis aún no está completo")
+
+    if not midi_generator.check_basic_pitch_available():
+        raise HTTPException(503, "basic-pitch no está disponible. Instala con: pip install basic-pitch")
+
+    video_id = chordify_task["result"]["video_id"]
+    url = f"https://www.youtube.com/watch?v={video_id}"
+
+    _midi_transcription_tasks[task_id] = {
+        "status": "processing",
+        "progress": 0,
+        "message": "Iniciando...",
+        "result": None,
+        "error": None,
+    }
+
+    def run_transcription():
+        import traceback
+        try:
+            def progress_cb(pct, msg):
+                print(f"[midi-transcribe:{task_id}] {pct}% - {msg}")
+                _midi_transcription_tasks[task_id]["progress"] = pct
+                _midi_transcription_tasks[task_id]["message"] = msg
+
+            progress_cb(5, "Descargando audio para transcripción...")
+            dl_info = audio_analyzer.download_audio(url, lambda p, m: progress_cb(min(10, p), m))
+
+            progress_cb(10, "Audio descargado, iniciando transcripción...")
+            result = midi_generator.transcribe_audio_to_midi(
+                dl_info["filepath"], task_id, progress_cb
+            )
+
+            # Cleanup downloaded audio
+            try:
+                os.remove(dl_info["filepath"])
+            except OSError:
+                pass
+
+            _midi_transcription_tasks[task_id]["status"] = "completed"
+            _midi_transcription_tasks[task_id]["progress"] = 100
+            _midi_transcription_tasks[task_id]["result"] = {
+                "download_url": f"/api/midi/{task_id}/transcription",
+                "note_events": result["note_events"],
+                "num_notes": result["num_notes"],
+            }
+            print(f"[midi-transcribe:{task_id}] Completado: {result['num_notes']} notas")
+        except Exception as e:
+            print(f"[midi-transcribe:{task_id}] ERROR: {traceback.format_exc()}")
+            _midi_transcription_tasks[task_id]["status"] = "error"
+            _midi_transcription_tasks[task_id]["error"] = str(e)
+
+    background_tasks.add_task(run_transcription)
+    return {"task_id": task_id, "message": "Transcripción iniciada"}
+
+
+@app.get("/api/chordify/transcribe-status/{task_id}")
+def api_transcribe_status(task_id: str):
+    """Poll transcription status."""
+    if task_id not in _midi_transcription_tasks:
+        raise HTTPException(404, "Tarea de transcripción no encontrada")
+    return _midi_transcription_tasks[task_id]
+
+
+@app.get("/api/midi/{task_id}/transcription")
+def api_midi_transcription_file(task_id: str):
+    """Serve MIDI transcription file for download."""
+    filename = f"{task_id}_transcription.mid"
+    filepath = os.path.join(midi_generator.MIDI_DIR, filename)
+
+    if not os.path.exists(filepath):
+        raise HTTPException(404, "Archivo MIDI no encontrado")
+
+    return FileResponse(
+        filepath,
+        media_type="audio/midi",
+        filename=filename,
+    )
 
 
 @app.get("/api/reference-images")

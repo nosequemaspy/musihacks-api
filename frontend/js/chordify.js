@@ -14,6 +14,14 @@ const Chordify = (() => {
     let currentTaskId = null; // For stem separation
     let currentVoicing = 0;  // Voicing index for current chord
 
+    // MIDI playback state
+    let midiAccompEvents = null;
+    let midiTranscribeEvents = null;
+    let midiPlaybackPart = null;
+    let midiIsPlaying = false;
+    let midiSynth = null;
+    let midiDriftInterval = null;
+
     const POLL_INTERVAL = 2000;
     const SYNC_FPS = 100; // ms between sync updates
     const BEATS_PER_BAR = 4;
@@ -83,6 +91,16 @@ const Chordify = (() => {
             card.querySelector('.stem-mute')?.addEventListener('click', () => toggleStemMute(card.dataset.stem));
         });
 
+        // MIDI accompaniment controls
+        document.getElementById('btn-generate-midi')?.addEventListener('click', generateMidiAccompaniment);
+        document.getElementById('btn-play-midi-accomp')?.addEventListener('click', () => startMidiPlayback('accomp'));
+        document.getElementById('btn-stop-midi-accomp')?.addEventListener('click', stopMidiPlayback);
+
+        // MIDI transcription controls
+        document.getElementById('btn-transcribe-midi')?.addEventListener('click', requestMidiTranscription);
+        document.getElementById('btn-play-midi-transcription')?.addEventListener('click', () => startMidiPlayback('transcription'));
+        document.getElementById('btn-stop-midi-transcription')?.addEventListener('click', stopMidiPlayback);
+
         loadYouTubeAPI();
         renderPresets();
         // Render empty mini pianos on init
@@ -123,6 +141,7 @@ const Chordify = (() => {
         whiteKeys.forEach((midi, i) => {
             const key = document.createElement('div');
             key.className = 'mini-key white';
+            key.dataset.midi = midi;
             key.style.left = (i * whiteKeyWidth) + 'px';
             key.style.position = 'absolute';
 
@@ -147,6 +166,7 @@ const Chordify = (() => {
 
             const key = document.createElement('div');
             key.className = 'mini-key black';
+            key.dataset.midi = midi;
             // Position black key overlapping two white keys
             const leftPos = (whiteIdx + 1) * whiteKeyWidth - 9;
             key.style.left = leftPos + 'px';
@@ -553,6 +573,12 @@ const Chordify = (() => {
         const stemsSection = document.getElementById('chordify-stems-section');
         if (stemsSection && currentTaskId) {
             stemsSection.classList.remove('hidden');
+        }
+
+        // Show MIDI section
+        const midiSection = document.getElementById('chordify-midi-section');
+        if (midiSection && currentTaskId) {
+            midiSection.classList.remove('hidden');
         }
     }
 
@@ -1097,6 +1123,291 @@ const Chordify = (() => {
         const audio = card.querySelector('.stem-audio');
         const isMuted = card.classList.toggle('muted');
         if (audio) audio.muted = isMuted;
+    }
+
+    // ─── MIDI Accompaniment ────────────────────────
+
+    async function generateMidiAccompaniment() {
+        if (!currentTaskId || !analysis) {
+            showNotification('Primero analiza una canción');
+            return;
+        }
+
+        const pattern = document.getElementById('midi-pattern-select')?.value || 'block';
+        const btn = document.getElementById('btn-generate-midi');
+        const statusEl = document.getElementById('midi-accomp-status');
+        if (btn) btn.disabled = true;
+        if (statusEl) statusEl.textContent = 'Generando...';
+
+        try {
+            const resp = await fetch(`/api/chordify/midi-accompaniment/${currentTaskId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pattern }),
+            });
+
+            if (!resp.ok) {
+                const err = await resp.json().catch(() => ({}));
+                throw new Error(err.detail || 'Error generando MIDI');
+            }
+
+            const data = await resp.json();
+            midiAccompEvents = data.note_events;
+
+            // Show result controls
+            showElement('midi-accomp-result');
+
+            // Set download link
+            const dlLink = document.getElementById('btn-download-midi-accomp');
+            if (dlLink) dlLink.href = data.download_url;
+
+            const patternNames = {
+                block: 'Acordes bloque',
+                arpeggio_up: 'Arpegio ascendente',
+                arpeggio_down: 'Arpegio descendente',
+                pop_ballad: 'Pop ballad',
+            };
+            if (statusEl) statusEl.textContent = `${patternNames[pattern] || pattern} — ${midiAccompEvents.length} notas`;
+
+        } catch (e) {
+            if (statusEl) statusEl.textContent = `Error: ${e.message}`;
+        } finally {
+            if (btn) btn.disabled = false;
+        }
+    }
+
+    // ─── MIDI Transcription ────────────────────────
+
+    async function requestMidiTranscription() {
+        if (!currentTaskId || !analysis) {
+            showNotification('Primero analiza una canción');
+            return;
+        }
+
+        const btn = document.getElementById('btn-transcribe-midi');
+        if (btn) btn.disabled = true;
+
+        showElement('midi-transcribe-progress');
+        hideElement('midi-transcribe-result');
+        updateMidiTranscribeProgress(0, 'Iniciando transcripción...');
+
+        try {
+            const resp = await fetch(`/api/chordify/transcribe/${currentTaskId}`, { method: 'POST' });
+            if (!resp.ok) {
+                const err = await resp.json().catch(() => ({}));
+                throw new Error(err.detail || 'Error al iniciar transcripción');
+            }
+
+            await pollMidiTranscribeStatus(currentTaskId);
+        } catch (e) {
+            updateMidiTranscribeProgress(0, `Error: ${e.message}`);
+            const fill = document.querySelector('#midi-transcribe-progress .progress-fill');
+            if (fill) fill.style.background = 'var(--dominant)';
+        } finally {
+            if (btn) btn.disabled = false;
+        }
+    }
+
+    async function pollMidiTranscribeStatus(taskId) {
+        return new Promise((resolve, reject) => {
+            const poll = setInterval(async () => {
+                try {
+                    const resp = await fetch(`/api/chordify/transcribe-status/${taskId}`);
+                    const data = await resp.json();
+
+                    updateMidiTranscribeProgress(data.progress, data.message || 'Procesando...');
+
+                    if (data.status === 'completed') {
+                        clearInterval(poll);
+                        onMidiTranscribeComplete(data.result);
+                        resolve();
+                    } else if (data.status === 'error') {
+                        clearInterval(poll);
+                        throw new Error(data.error || 'Error desconocido');
+                    }
+                } catch (e) {
+                    clearInterval(poll);
+                    updateMidiTranscribeProgress(0, `Error: ${e.message}`);
+                    const fill = document.querySelector('#midi-transcribe-progress .progress-fill');
+                    if (fill) fill.style.background = 'var(--dominant)';
+                    reject(e);
+                }
+            }, 3000);
+        });
+    }
+
+    function updateMidiTranscribeProgress(pct, msg) {
+        const fill = document.querySelector('#midi-transcribe-progress .progress-fill');
+        const text = document.querySelector('#midi-transcribe-progress .progress-text');
+        if (fill) { fill.style.width = `${pct}%`; fill.style.background = ''; }
+        if (text) text.textContent = msg;
+    }
+
+    function onMidiTranscribeComplete(result) {
+        hideElement('midi-transcribe-progress');
+        showElement('midi-transcribe-result');
+
+        midiTranscribeEvents = result.note_events;
+
+        // Set download link
+        const dlLink = document.getElementById('btn-download-midi-transcription');
+        if (dlLink) dlLink.href = result.download_url;
+
+        const infoEl = document.getElementById('midi-transcribe-info');
+        if (infoEl) infoEl.textContent = `${result.num_notes} notas transcritas`;
+    }
+
+    // ─── MIDI Playback with Tone.js ────────────────────────
+
+    function _ensureMidiSynth() {
+        if (!midiSynth) {
+            midiSynth = new Tone.PolySynth(Tone.Synth, {
+                maxPolyphony: 32,
+                voice: Tone.Synth,
+                options: {
+                    oscillator: { type: 'triangle' },
+                    envelope: { attack: 0.02, decay: 0.3, sustain: 0.4, release: 0.8 },
+                    volume: -8,
+                },
+            }).toDestination();
+        }
+        return midiSynth;
+    }
+
+    function _midiToNoteName(midi) {
+        const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+        const octave = Math.floor(midi / 12) - 1;
+        const pc = midi % 12;
+        return noteNames[pc] + octave;
+    }
+
+    async function startMidiPlayback(mode) {
+        stopMidiPlayback();
+
+        const events = mode === 'accomp' ? midiAccompEvents : midiTranscribeEvents;
+        if (!events || events.length === 0) {
+            showNotification('No hay notas MIDI para reproducir');
+            return;
+        }
+
+        if (Tone.context.state !== 'running') await Tone.start();
+
+        const synth = _ensureMidiSynth();
+
+        // Get current video time as offset
+        let videoOffset = 0;
+        try {
+            if (player && player.getCurrentTime) {
+                videoOffset = player.getCurrentTime();
+            }
+        } catch (e) {}
+
+        // Create a Tone.Part with all note events
+        const partEvents = events
+            .filter(ev => ev.time >= videoOffset)
+            .map(ev => ({
+                time: ev.time - videoOffset,
+                note: _midiToNoteName(ev.midi),
+                duration: Math.max(0.05, ev.duration),
+                velocity: (ev.velocity || 90) / 127,
+                midi: ev.midi,
+            }));
+
+        if (partEvents.length === 0) {
+            showNotification('No hay notas a partir del tiempo actual del video');
+            return;
+        }
+
+        midiPlaybackPart = new Tone.Part((time, value) => {
+            synth.triggerAttackRelease(value.note, value.duration, time, value.velocity);
+
+            // Schedule visual highlight on the draw loop
+            Tone.Draw.schedule(() => {
+                highlightMidiNote(value.midi, value.duration * 1000);
+            }, time);
+        }, partEvents.map(ev => [ev.time, ev]));
+
+        Tone.Transport.stop();
+        Tone.Transport.position = 0;
+        midiPlaybackPart.start(0);
+        Tone.Transport.start();
+        midiIsPlaying = true;
+
+        // Start drift correction
+        _startDriftCorrection(videoOffset);
+    }
+
+    function stopMidiPlayback() {
+        if (midiPlaybackPart) {
+            midiPlaybackPart.stop();
+            midiPlaybackPart.dispose();
+            midiPlaybackPart = null;
+        }
+        if (midiDriftInterval) {
+            clearInterval(midiDriftInterval);
+            midiDriftInterval = null;
+        }
+        try {
+            Tone.Transport.stop();
+            Tone.Transport.position = 0;
+        } catch (e) {}
+
+        if (midiSynth) {
+            try { midiSynth.releaseAll(); } catch (e) {}
+        }
+
+        midiIsPlaying = false;
+
+        // Clear all MIDI highlights
+        document.querySelectorAll('.mini-key.midi-active').forEach(el => el.classList.remove('midi-active'));
+        Piano.clearHighlights();
+    }
+
+    function _startDriftCorrection(initialVideoOffset) {
+        if (midiDriftInterval) clearInterval(midiDriftInterval);
+
+        midiDriftInterval = setInterval(() => {
+            if (!midiIsPlaying || !player) return;
+
+            try {
+                const state = player.getPlayerState();
+                if (state !== YT.PlayerState.PLAYING) return;
+
+                const videoTime = player.getCurrentTime();
+                const toneTime = Tone.Transport.seconds + initialVideoOffset;
+                const drift = Math.abs(videoTime - toneTime);
+
+                if (drift > 0.3) {
+                    // Re-sync: adjust transport to match video
+                    const newOffset = videoTime - initialVideoOffset;
+                    if (newOffset >= 0) {
+                        Tone.Transport.seconds = newOffset;
+                    }
+                }
+            } catch (e) {}
+        }, 2000);
+    }
+
+    function highlightMidiNote(midi, durationMs) {
+        // Highlight on mini pianos
+        const miniKeys = document.querySelectorAll(`.mini-piano-container .mini-key[data-midi="${midi}"]`);
+        miniKeys.forEach(key => {
+            key.classList.add('midi-active');
+            setTimeout(() => key.classList.remove('midi-active'), Math.min(durationMs, 2000));
+        });
+
+        // Highlight on main piano
+        const mainKey = document.querySelector(`#piano [data-midi="${midi}"]`);
+        if (mainKey) {
+            mainKey.classList.add('scale-highlight');
+            setTimeout(() => mainKey.classList.remove('scale-highlight'), Math.min(durationMs, 2000));
+        }
+
+        // Also play via Piano module if available
+        try {
+            const noteName = _midiToNoteName(midi);
+            // Don't double-play; the synth is already playing the note
+        } catch (e) {}
     }
 
     return {

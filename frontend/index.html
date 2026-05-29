@@ -753,6 +753,53 @@
                     </div>
                 </div>
 
+                <!-- MIDI Accompaniment & Transcription -->
+                <div id="chordify-midi-section" class="chordify-midi-section hidden">
+                    <!-- Accompaniment -->
+                    <div class="midi-subsection">
+                        <div class="midi-header">
+                            <h4>MIDI Acompa&ntilde;amiento</h4>
+                            <div class="midi-controls-row">
+                                <select id="midi-pattern-select" class="midi-select">
+                                    <option value="block">Acordes bloque</option>
+                                    <option value="arpeggio_up">Arpegio ascendente</option>
+                                    <option value="arpeggio_down">Arpegio descendente</option>
+                                    <option value="pop_ballad">Pop ballad</option>
+                                </select>
+                                <button id="btn-generate-midi" class="btn btn-accent btn-sm">Generar MIDI</button>
+                            </div>
+                        </div>
+                        <div id="midi-accomp-result" class="midi-result hidden">
+                            <div class="midi-result-actions">
+                                <button id="btn-play-midi-accomp" class="btn btn-sm btn-play">Reproducir</button>
+                                <button id="btn-stop-midi-accomp" class="btn btn-sm btn-stop">Stop</button>
+                                <a id="btn-download-midi-accomp" class="btn btn-sm btn-accent" download>Descargar .mid</a>
+                            </div>
+                            <span id="midi-accomp-status" class="midi-status"></span>
+                        </div>
+                    </div>
+
+                    <!-- Transcription -->
+                    <div class="midi-subsection">
+                        <div class="midi-header">
+                            <h4>Transcripci&oacute;n Audio &rarr; MIDI</h4>
+                            <button id="btn-transcribe-midi" class="btn btn-accent btn-sm">Transcribir</button>
+                        </div>
+                        <div id="midi-transcribe-progress" class="chordify-progress hidden">
+                            <div class="progress-bar"><div class="progress-fill"></div></div>
+                            <span class="progress-text">Iniciando...</span>
+                        </div>
+                        <div id="midi-transcribe-result" class="midi-result hidden">
+                            <div class="midi-result-actions">
+                                <button id="btn-play-midi-transcription" class="btn btn-sm btn-play">Reproducir</button>
+                                <button id="btn-stop-midi-transcription" class="btn btn-sm btn-stop">Stop</button>
+                                <a id="btn-download-midi-transcription" class="btn btn-sm btn-accent" download>Descargar .mid</a>
+                            </div>
+                            <span id="midi-transcribe-info" class="midi-status"></span>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
 

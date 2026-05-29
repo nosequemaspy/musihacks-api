@@ -2826,6 +2826,99 @@ section {
     }
 }
 
+/* === MIDI Accompaniment & Transcription === */
+.chordify-midi-section {
+    margin-top: 16px;
+}
+
+.midi-subsection {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 10px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.midi-subsection:hover {
+    border-color: var(--glow-cyan-border);
+    box-shadow: var(--glow-sm);
+}
+
+.midi-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.midi-header h4 {
+    color: var(--text-muted);
+    font-size: 0.88rem;
+    margin: 0;
+}
+
+.midi-controls-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.midi-select {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    padding: 4px 8px;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.midi-select:focus {
+    outline: none;
+    border-color: var(--glow-cyan-border);
+    box-shadow: var(--glow-sm);
+}
+
+.midi-result {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+}
+
+.midi-result-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.midi-result-actions a.btn {
+    text-decoration: none;
+}
+
+.midi-status {
+    display: block;
+    margin-top: 6px;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+}
+
+/* MIDI active note highlight on mini piano */
+.mini-piano-container .mini-key.white.midi-active {
+    background: linear-gradient(180deg, #5bcefa, #88d8f8) !important;
+    border-color: #4ab8d8 !important;
+    box-shadow: 0 0 8px rgba(91, 206, 250, 0.5);
+}
+
+.mini-piano-container .mini-key.black.midi-active {
+    background: linear-gradient(180deg, #3a9cbf, #2d7a99) !important;
+    border-color: #3a9cbf !important;
+    box-shadow: 0 0 8px rgba(91, 206, 250, 0.5);
+}
+
 /* === Footer === */
 footer {
     text-align: center;
