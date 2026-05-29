@@ -20,7 +20,7 @@ CONFIDENCE_THRESHOLD = 0.55
 MAX_CHORD_BARS = 8  # Max bars before forcing a new chord segment
 
 # ─── Per-beat analysis and merging parameters ──────────────────────
-MIN_PERSISTENCE_BEATS = 2    # Beats minimos para validar un cambio de acorde
+MIN_PERSISTENCE_TIME = 0.8   # Seconds: minimum time a chord change must persist to be real
 CHANGE_SIGNIFICANCE_THRESHOLD = 0.08  # Diferencia minima de similitud coseno para cambio real
 CHROMA_SIMILARITY_THRESHOLD = 0.92    # Similitud coseno entre chromas para considerarlos iguales
 DIATONIC_BONUS = 0.03        # Bonus para acordes con raiz diatonica
@@ -29,6 +29,14 @@ PRIMARY_DIATONIC_BONUS = 0.05  # Bonus para acordes I, IV, V, vi
 # ─── Chord templates for cosine-similarity detection ───────────────
 
 NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+NOTE_NAMES_FLAT = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B']
+
+# Sharp-to-flat mapping for post-processing chord names
+_SHARP_TO_FLAT = {'C#': 'Db', 'D#': 'Eb', 'F#': 'Gb', 'G#': 'Ab', 'A#': 'Bb'}
+
+# Keys that conventionally use flat names (root pitch classes)
+# F(5), Bb(10), Eb(3), Ab(8), Db(1), Gb(6) major + Dm(2), Gm(7), Cm(0), Fm(5), Bbm(10), Ebm(3) minor
+_FLAT_KEY_PCS = {1, 3, 5, 6, 8, 10}  # PCs whose keys prefer flats
 
 # Chord types as semitone intervals from root (15 types)
 AUDIO_CHORD_TYPES = {
@@ -49,13 +57,16 @@ AUDIO_CHORD_TYPES = {
     'm6':         [0, 3, 7, 9],
 }
 
-# Tiered simplicity bonus: simpler chords get a small boost to break ties
+# Tiered simplicity bonus: simpler chords get a boost to break ties.
+# Power chord ('5') gets a PENALTY because its 2-note template has unfair
+# cosine similarity advantage — only wins when the 3rd is truly absent.
 _SIMPLICITY_BONUS = {
-    'major': 0.04, 'minor': 0.04,                          # Tier 1: triads
-    'sus2': 0.02, 'sus4': 0.02, '5': 0.02,                 # Tier 2: simple variants
+    'major': 0.05, 'minor': 0.05,                          # Tier 1: triads
+    'sus2': 0.02, 'sus4': 0.02,                             # Tier 2: suspended
     'dominant7': 0.01, 'minor7': 0.01, 'major7': 0.01,     # Tier 3: 7ths
     'diminished': 0.0, 'augmented': 0.0, 'dim7': 0.0,      # Tier 4: complex
     'half_dim7': 0.0, 'add9': 0.0, '6': 0.0, 'm6': 0.0,
+    '5': -0.05,                                              # Penalty: 2-note template
 }
 
 # Display symbols per chord type
@@ -113,44 +124,94 @@ def _detect_key_from_chroma(chroma: np.ndarray) -> dict:
     """
     Detect key from a full chroma matrix using Krumhansl-Kessler profiles.
     Correlates mean chroma energy against all 24 major/minor key profiles.
-    Returns dict with key name, mode, and confidence (0-100).
+    Returns dict with key name, mode, confidence (0-100), and top candidates
+    for chord-informed refinement.
     """
     # Average chroma across all frames
     chroma_mean = np.mean(chroma, axis=1)
 
     # Avoid division by zero
     if np.max(chroma_mean) < 1e-8:
-        return {"key": "C", "mode": "major", "confidence": 0}
+        return {"key": "C", "mode": "major", "confidence": 0, "_candidates": []}
 
-    best_corr = -2.0
-    best_root = 0
-    best_mode = "major"
-
+    candidates = []
     for root in range(12):
-        # Rotate profile so index 0 = the candidate root
         major_profile = np.roll(_KK_MAJOR, root)
         minor_profile = np.roll(_KK_MINOR, root)
 
         corr_maj = float(np.corrcoef(chroma_mean, major_profile)[0, 1])
         corr_min = float(np.corrcoef(chroma_mean, minor_profile)[0, 1])
 
-        if corr_maj > best_corr:
-            best_corr = corr_maj
-            best_root = root
-            best_mode = "major"
-        if corr_min > best_corr:
-            best_corr = corr_min
-            best_root = root
-            best_mode = "minor"
+        maj_name, min_name = _KEY_DISPLAY[root]
+        candidates.append({"root": root, "key": maj_name, "mode": "major", "corr": corr_maj})
+        candidates.append({"root": root, "key": min_name, "mode": "minor", "corr": corr_min})
 
-    # Map to display name
-    maj_name, min_name = _KEY_DISPLAY[best_root]
-    key_name = min_name if best_mode == "minor" else maj_name
+    candidates.sort(key=lambda c: c["corr"], reverse=True)
+    best = candidates[0]
 
-    # Confidence: map correlation (typically 0.3-0.9) to 0-100
-    confidence = int(max(0, min(100, (best_corr - 0.3) / 0.6 * 100)))
+    confidence = int(max(0, min(100, (best["corr"] - 0.3) / 0.6 * 100)))
 
-    return {"key": key_name, "mode": best_mode, "confidence": confidence}
+    return {
+        "key": best["key"],
+        "mode": best["mode"],
+        "confidence": confidence,
+        "_candidates": candidates[:6],  # Top 6 for refinement
+    }
+
+
+def _refine_key_with_chords(key_info: dict, chords: list) -> dict:
+    """
+    Refine key detection using the distribution of detected chord roots.
+    If a closely-correlated key candidate has significantly better chord-root
+    coverage, switch to it. Fixes common confusions like Eb vs Ab.
+    """
+    candidates = key_info.get("_candidates", [])
+    if len(candidates) < 2 or not chords:
+        return key_info
+
+    # Build duration-weighted root pitch class histogram
+    root_weight = {}
+    for c in chords:
+        pc = _parse_root_pc(c["chord"])
+        if pc is not None:
+            root_weight[pc] = root_weight.get(pc, 0) + c.get("duration", 1.0)
+
+    total_weight = sum(root_weight.values()) or 1.0
+
+    # Score each candidate: what fraction of chord-root weight is diatonic?
+    # Key insight: the tonic (I chord) should have the most weight
+    best_combined = -1.0
+    best_candidate = candidates[0]
+
+    for cand in candidates[:6]:
+        diatonic_pcs, primary_pcs = _build_diatonic_set(cand["key"], cand["mode"])
+        if not diatonic_pcs:
+            continue
+
+        diatonic_weight = sum(w for pc, w in root_weight.items() if pc in diatonic_pcs)
+        primary_weight = sum(w for pc, w in root_weight.items() if pc in primary_pcs)
+        tonic_weight = root_weight.get(cand["root"], 0)
+
+        diatonic_ratio = diatonic_weight / total_weight
+        primary_ratio = primary_weight / total_weight
+        tonic_ratio = tonic_weight / total_weight
+
+        # Combined: K-K correlation + diatonic fit + tonic presence
+        kk_score = (cand["corr"] - 0.3) / 0.6  # 0-1 range
+        chord_score = 0.3 * diatonic_ratio + 0.3 * primary_ratio + 0.4 * tonic_ratio
+        combined = 0.4 * kk_score + 0.6 * chord_score
+
+        if combined > best_combined:
+            best_combined = combined
+            best_candidate = cand
+
+    confidence = int(max(0, min(100, (best_candidate["corr"] - 0.3) / 0.6 * 100)))
+
+    return {
+        "key": best_candidate["key"],
+        "mode": best_candidate["mode"],
+        "confidence": confidence,
+    }
 
 
 def _ensure_temp_dir():
@@ -403,8 +464,13 @@ def analyze_audio(filepath: str, progress_cb=None) -> dict:
     if progress_cb:
         progress_cb(76, "Fusionando beats en segmentos...")
 
+    # Adaptive persistence: at fast tempos, require more beats for a change to be real
+    # e.g. 60 BPM -> 2 beats (0.8s), 120 BPM -> 2 beats, 160 BPM -> 3 beats
+    import math
+    persistence_beats = max(2, math.ceil(MIN_PERSISTENCE_TIME * tempo / 60.0))
+
     # Merge beats into segments with persistence and significance filters
-    raw_chords = _merge_beats_to_segments(beat_chords, beat_chromas)
+    raw_chords = _merge_beats_to_segments(beat_chords, beat_chromas, persistence_beats)
 
     if progress_cb:
         progress_cb(82, "Detectando tonalidad...")
@@ -429,6 +495,21 @@ def analyze_audio(filepath: str, progress_cb=None) -> dict:
 
     # Smooth timeline (merge + orphan removal + adaptive duration filter)
     smoothed = _smooth_timeline(raw_chords, min_chord_dur, approach_note_dur)
+
+    if progress_cb:
+        progress_cb(90, "Refinando tonalidad...")
+
+    # Refine key using chord root distribution (fixes Eb vs Ab, etc.)
+    key_info = _refine_key_with_chords(key_info, smoothed)
+
+    # Re-run diatonic scoring with refined key if it changed
+    smoothed = _apply_diatonic_scoring(
+        smoothed, key_info, chroma, bass_chroma, beat_frames, beat_times,
+        total_beats, len(y), sr
+    )
+
+    # Respell chord names for flat keys (A# -> Bb, D# -> Eb, etc.)
+    smoothed = _respell_chords_for_key(smoothed, key_info["key"])
 
     return {
         "tempo": round(tempo, 1),
@@ -502,10 +583,10 @@ def _detect_chord_from_chroma(chroma_avg: np.ndarray, bass_avg: np.ndarray) -> d
     }
 
 
-def _merge_beats_to_segments(beat_chords: list, beat_chromas: list) -> list:
+def _merge_beats_to_segments(beat_chords: list, beat_chromas: list, persistence_beats: int = 2) -> list:
     """
     Merge per-beat chord detections into segments using:
-    1. Persistence filter: a chord change must last >= MIN_PERSISTENCE_BEATS
+    1. Persistence filter: a chord change must last >= persistence_beats
     2. Significance filter: adjacent chromas must differ enough (cosine sim < threshold)
     3. Consecutive merge: identical adjacent chords become one segment
     """
@@ -530,7 +611,7 @@ def _merge_beats_to_segments(beat_chords: list, beat_chromas: list) -> list:
                 else:
                     break
 
-            if run_len >= MIN_PERSISTENCE_BEATS:
+            if run_len >= persistence_beats:
                 # Also check significance: is the chroma actually different?
                 if i < len(beat_chromas) and run_start < len(beat_chromas):
                     norm_a = np.linalg.norm(beat_chromas[run_start])
@@ -638,6 +719,66 @@ def _parse_root_pc(chord_symbol: str) -> int | None:
         root += base[1]
 
     return _NOTE_TO_PC.get(root)
+
+
+def _should_use_flats(key_name: str) -> bool:
+    """Determine if a key conventionally uses flat note names."""
+    # If the key name itself contains a flat, definitely use flats
+    if 'b' in key_name:
+        return True
+    pc = _parse_root_pc(key_name)
+    if pc is None:
+        return False
+    # Check if it's a minor key by looking for 'm' after the root
+    is_minor = key_name.endswith('m') and not key_name.endswith('#m')
+    if is_minor:
+        # Minor keys with flats: Dm(2), Gm(7), Cm(0), Fm(5), Bbm(10), Ebm(3)
+        return pc in {0, 2, 3, 5, 7, 10}
+    # Major keys with flats: F(5), Bb(10), Eb(3), Ab(8), Db(1), Gb(6)
+    return pc in _FLAT_KEY_PCS
+
+
+def _respell_sharp_to_flat(name: str) -> str:
+    """Convert a single sharp note name to flat equivalent: 'A#' -> 'Bb'."""
+    return _SHARP_TO_FLAT.get(name, name)
+
+
+def _respell_chords_for_key(chords: list, key_name: str) -> list:
+    """
+    Post-process chord list: if the key uses flats, rename all sharp notes
+    to their flat equivalents (A# -> Bb, D# -> Eb, etc).
+    """
+    if not _should_use_flats(key_name):
+        return chords
+
+    result = []
+    for c in chords:
+        c = dict(c)
+
+        # Respell chord symbol
+        symbol = c["chord"]
+        # Handle slash chords: "A#m7/D#" -> "Bbm7/Eb"
+        parts = symbol.split('/')
+        respelled_parts = []
+        for part in parts:
+            # Extract root (1-2 chars) and suffix
+            if len(part) > 1 and part[1] == '#':
+                root = part[:2]
+                suffix = part[2:]
+                respelled_parts.append(_respell_sharp_to_flat(root) + suffix)
+            else:
+                respelled_parts.append(part)
+        c["chord"] = '/'.join(respelled_parts)
+
+        # Respell note names
+        c["notes"] = [_respell_sharp_to_flat(n) for n in c.get("notes", [])]
+
+        # Respell bass note
+        if c.get("bass"):
+            c["bass"] = _respell_sharp_to_flat(c["bass"])
+
+        result.append(c)
+    return result
 
 
 def _build_diatonic_set(key_name: str, mode: str) -> tuple:
