@@ -831,6 +831,12 @@ FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
 REFERENCE_DIR = Path(__file__).parent.parent / "reference"
 
 
+@app.api_route("/health", methods=["GET", "HEAD"])
+def health_check():
+    """Health check endpoint for uptime monitors."""
+    return {"status": "ok"}
+
+
 @app.get("/")
 def serve_index():
     """Serve the main HTML page."""
